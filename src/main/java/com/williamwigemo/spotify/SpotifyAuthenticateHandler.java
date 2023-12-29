@@ -12,11 +12,11 @@ import com.sun.net.httpserver.HttpHandler;
 import com.williamwigemo.UrlUtils;
 
 public class SpotifyAuthenticateHandler implements HttpHandler {
-    private SpotifyAPI spotifyAPI;
+    private SpotifyAuth spotifyAuth;
     private final ObjectMapper objectMapper;
 
-    public SpotifyAuthenticateHandler(SpotifyAPI spotifyAPI) {
-        this.spotifyAPI = spotifyAPI;
+    public SpotifyAuthenticateHandler(SpotifyAuth spotifyAuth) {
+        this.spotifyAuth = spotifyAuth;
         this.objectMapper = new ObjectMapper();
     }
 
@@ -38,10 +38,12 @@ public class SpotifyAuthenticateHandler implements HttpHandler {
                 .toString();
 
         RequestData data = objectMapper.readValue(requestBody, RequestData.class);
-        String accessToken = UrlUtils.queryToMap(data.fragment).get("access_token");
+        SpotifyTokenResponse tokenRes = objectMapper.readValue(
+                UrlUtils.hashMapToString(UrlUtils.queryToMap(data.fragment)),
+                SpotifyTokenResponse.class);
 
-        assert accessToken != null;
-        this.spotifyAPI.setAccessToken(accessToken);
+        assert tokenRes.accessToken != null;
+        this.spotifyAuth.setAccessToken(tokenRes);
 
         httpExchange.sendResponseHeaders(200, bodyRes.length());
         out.write(bodyRes.getBytes());

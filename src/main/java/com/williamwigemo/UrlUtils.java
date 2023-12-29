@@ -22,7 +22,7 @@ public class UrlUtils {
         return queryMap;
     }
 
-    public static <T> String hashMapToString(HashMap<String, T> hashMap) throws JsonProcessingException {
+    public static <T> String hashMapToString(Map<String, T> hashMap) throws JsonProcessingException {
         return new ObjectMapper().writeValueAsString(hashMap);
     }
 

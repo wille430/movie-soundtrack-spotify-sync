@@ -27,19 +27,18 @@ public class SpotifyAPI {
 
     private static final String ApiBaseUrl = "https://api.spotify.com/v1";
     private HttpClient httpClient;
-    private String accessToken = null;
     private SpotifyCurrentUser currentUser = null;
-    private CountDownLatch accessTokenLatch;
     private final ObjectMapper objectMapper;
     private final SpotifyOauthServer oauthServer;
     private String clientId;
+    private SpotifyAuth spotifyAuth;
 
     public SpotifyAPI(String clientId) throws IOException {
         this.clientId = clientId;
         this.httpClient = HttpClient.newHttpClient();
-        this.accessTokenLatch = new CountDownLatch(1);
-        this.oauthServer = new SpotifyOauthServer(this);
         this.objectMapper = new ObjectMapper();
+        this.spotifyAuth = new SpotifyAuth();
+        this.oauthServer = new SpotifyOauthServer(this.spotifyAuth);
     }
 
     private <T> HttpResponse<T> sendRequest(HttpRequest req, BodyHandler<T> bodyHandler)
@@ -57,18 +56,13 @@ public class SpotifyAPI {
                 .collect(Collectors.joining("&"));
     }
 
-    public void setAccessToken(String accessToken) {
-        this.accessToken = accessToken;
-        this.accessTokenLatch.countDown();
-    }
-
     public SpotifyCurrentUser getCurrentUser() throws SpotifyApiException {
         if (currentUser == null) {
             URI uri = URI.create(ApiBaseUrl + "/me");
 
             HttpRequest req = HttpRequest.newBuilder(uri)
                     .header("Content-Type", "application/json")
-                    .header("Authorization", "Bearer " + this.accessToken)
+                    .header("Authorization", "Bearer " + this.spotifyAuth.getAccessToken())
                     .GET().build();
 
             HttpResponse<Supplier<SpotifyCurrentUser>> res = this.sendRequest(req,
@@ -81,7 +75,11 @@ public class SpotifyAPI {
     }
 
     public void authenticate() {
-        this.accessTokenLatch = new CountDownLatch(1);
+        if (this.spotifyAuth.isAuthenticated()) {
+            return;
+        }
+
+        this.spotifyAuth.setAccessTokenLatch(new CountDownLatch(1));
         this.oauthServer.start();
 
         List<String> scopes = Arrays.asList("playlist-read-private", "user-read-private", "playlist-modify-private");
@@ -97,7 +95,7 @@ public class SpotifyAPI {
         System.out.println("Authenticate by following this link: " + uri.toString());
 
         try {
-            accessTokenLatch.await();
+            this.spotifyAuth.getAccessTokenLatch().await();
         } catch (InterruptedException e) {
             e.printStackTrace();
             return;
@@ -115,7 +113,7 @@ public class SpotifyAPI {
         URI uri = URI.create("https://api.spotify.com/v1/search?" + form);
         HttpRequest req = HttpRequest.newBuilder(uri)
                 .header("Content-Type", "application/json")
-                .header("Authorization", "Bearer " + this.accessToken)
+                .header("Authorization", "Bearer " + this.spotifyAuth.getAccessToken())
                 .GET().build();
 
         HttpResponse<Supplier<SpotifySearchResponse>> res = this.sendRequest(req,
@@ -143,7 +141,7 @@ public class SpotifyAPI {
 
         HttpRequest req = HttpRequest.newBuilder(uri)
                 .header("Content-Type", "application/json")
-                .header("Authorization", "Bearer " + this.accessToken)
+                .header("Authorization", "Bearer " + this.spotifyAuth.getAccessToken())
                 .POST(BodyPublishers.ofString(jsonData)).build();
 
         HttpResponse<String> res = this.sendRequest(req,
@@ -166,7 +164,7 @@ public class SpotifyAPI {
 
         HttpRequest req = HttpRequest.newBuilder(uri)
                 .header("Content-Type", "application/json")
-                .header("Authorization", "Bearer " + this.accessToken)
+                .header("Authorization", "Bearer " + this.spotifyAuth.getAccessToken())
                 .GET().build();
 
         HttpResponse<Supplier<SpotifyGetPlaylistsResponse>> res = this.sendRequest(req,
@@ -197,7 +195,7 @@ public class SpotifyAPI {
 
         HttpRequest req = HttpRequest.newBuilder(uri)
                 .header("Content-Type", "application/json")
-                .header("Authorization", "Bearer " + this.accessToken)
+                .header("Authorization", "Bearer " + this.spotifyAuth.getAccessToken())
                 .POST(BodyPublishers.ofString(jsonData)).build();
 
         HttpResponse<String> res = this.sendRequest(req, BodyHandlers.ofString());
@@ -217,7 +215,7 @@ public class SpotifyAPI {
 
         HttpRequest req = HttpRequest.newBuilder(uri)
                 .header("Content-Type", "application/json")
-                .header("Authorization", "Bearer " + this.accessToken)
+                .header("Authorization", "Bearer " + this.spotifyAuth.getAccessToken())
                 .GET().build();
 
         HttpResponse<String> res = this.sendRequest(req, BodyHandlers.ofString());

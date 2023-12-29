@@ -8,16 +8,16 @@ import com.williamwigemo.OAuthServer;
 
 public class SpotifyOauthServer implements OAuthServer {
     private final HttpServer server;
-    private final SpotifyAPI spotifyAPI;
+    private final SpotifyAuth spotifyAuth;
 
-    public SpotifyOauthServer(SpotifyAPI spotifyAPI) throws IOException {
+    public SpotifyOauthServer(SpotifyAuth spotifyAuth) throws IOException {
         this.server = HttpServer.create(new InetSocketAddress("localhost", 3000), 0);
-        this.spotifyAPI = spotifyAPI;
+        this.spotifyAuth = spotifyAuth;
     }
 
     public void start() {
         server.createContext("/spotify/redirect", new SpotifyRedirectHandler());
-        server.createContext("/authenticate", new SpotifyAuthenticateHandler(spotifyAPI));
+        server.createContext("/authenticate", new SpotifyAuthenticateHandler(spotifyAuth));
         server.setExecutor(null);
         server.start();
     }
