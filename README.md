@@ -4,7 +4,7 @@ Used built-in HttpServer instead of Spring for the HTTP server used in the OAuth
 
 ### To-dos
 
-+ [ ] Allow for incremental synchronization 
-+ [ ] Safe access tokens between executions
++ [x] Allow for incremental synchronization 
++ [x] Safe access tokens between executions
 + [ ] Improved filtering of insignificant soundtracks
 + [ ] Improved Spotify searching to reduce the number of invalid tracks added

@@ -11,6 +11,7 @@ import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
@@ -50,12 +51,6 @@ public class SpotifyAPI {
         }
     }
 
-    private static String getFormString(HashMap<String, String> params) {
-        return params.keySet().stream()
-                .map(key -> key + "=" + URLEncoder.encode(params.get(key), StandardCharsets.UTF_8))
-                .collect(Collectors.joining("&"));
-    }
-
     public SpotifyCurrentUser getCurrentUser() throws SpotifyApiException {
         if (currentUser == null) {
             URI uri = URI.create(ApiBaseUrl + "/me");
@@ -88,7 +83,7 @@ public class SpotifyAPI {
         parameters.put("response_type", "token");
         parameters.put("redirect_uri", "http://localhost:3000/spotify/redirect");
         parameters.put("scope", (String.join(" ", scopes)));
-        String form = getFormString(parameters);
+        String form = UrlUtils.getQueryString(parameters);
 
         URI uri = URI.create("https://accounts.spotify.com/authorize?" + form);
 
@@ -108,7 +103,7 @@ public class SpotifyAPI {
         HashMap<String, String> parameters = new HashMap<>();
         parameters.put("q", trackName);
         parameters.put("type", "track");
-        String form = getFormString(parameters);
+        String form = UrlUtils.getQueryString(parameters);
 
         URI uri = URI.create("https://api.spotify.com/v1/search?" + form);
         HttpRequest req = HttpRequest.newBuilder(uri)
@@ -116,10 +111,18 @@ public class SpotifyAPI {
                 .header("Authorization", "Bearer " + this.spotifyAuth.getAccessToken())
                 .GET().build();
 
-        HttpResponse<Supplier<SpotifySearchResponse>> res = this.sendRequest(req,
-                new JsonBodyHandler<>(SpotifySearchResponse.class));
+        HttpResponse<String> res = this.sendRequest(req, BodyHandlers.ofString());
 
-        SpotifySearchResponse searchResponse = res.body().get();
+        if (res.statusCode() != 200) {
+            throw new SpotifyApiException(res);
+        }
+
+        SpotifySearchResponse searchResponse;
+        try {
+            searchResponse = UrlUtils.parseResponseBody(res.body(), SpotifySearchResponse.class);
+        } catch (IOException e) {
+            throw new SpotifyApiException("Could not parse contents: " + e.getMessage());
+        }
 
         return searchResponse.tracks.trackObjects.stream()
                 .filter(o -> o.name.toLowerCase().contains(trackName.toLowerCase())).findFirst();

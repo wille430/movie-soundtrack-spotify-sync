@@ -1,12 +1,14 @@
 package com.williamwigemo;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.prefs.BackingStoreException;
 import java.util.stream.Collectors;
 
 import com.williamwigemo.spotify.SpotifyAPI;
@@ -15,6 +17,7 @@ import com.williamwigemo.spotify.SpotifyPlaylistSync;
 import com.williamwigemo.spotify.SpotifyTrack;
 import com.williamwigemo.trakt.TraktApi;
 import com.williamwigemo.trakt.TraktApiException;
+import com.williamwigemo.trakt.TraktHistoryManager;
 import com.williamwigemo.trakt.TraktMovie;
 
 import me.tongfei.progressbar.ProgressBar;
@@ -101,6 +104,8 @@ public class App {
     }
 
     public void run() {
+        Date lastMovieSync = new Date();
+
         try {
             this.traktApi.authenticate();
         } catch (TraktApiException e) {
@@ -112,7 +117,7 @@ public class App {
         // load watched movies
         List<TraktMovie> history;
         try {
-            history = this.traktApi.getMovieHistory();
+            history = this.traktApi.syncMovieHistory();
         } catch (TraktApiException e) {
             System.out.println("Failed to load movie history from Trakt.");
             e.printStackTrace();
@@ -143,6 +148,8 @@ public class App {
             e.printStackTrace();
             return;
         }
+
+        this.traktApi.setLastMovieSync(lastMovieSync);
 
         displaySummary(history, movieToTracksMap, tracksAdded);
     }

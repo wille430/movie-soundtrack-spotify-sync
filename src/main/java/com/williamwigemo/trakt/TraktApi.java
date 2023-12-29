@@ -7,10 +7,19 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.text.ParseException;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.williamwigemo.AppCredentials;
 import com.williamwigemo.UrlUtils;
 
@@ -21,12 +30,14 @@ public class TraktApi {
     private final TraktAuth traktAuth;
     private final TraktOAuthServer oauthServer;
     private final AppCredentials appCredentials;
+    private final TraktHistoryManager historyManager;
 
     public TraktApi(AppCredentials appCredentials) throws IOException {
         this.httpClient = HttpClient.newHttpClient();
         this.traktAuth = new TraktAuth(this);
         this.oauthServer = new TraktOAuthServer(this.traktAuth);
         this.appCredentials = appCredentials;
+        this.historyManager = TraktHistoryManager.getInstance();
     }
 
     public AppCredentials getAppCredentials() {
@@ -60,7 +71,26 @@ public class TraktApi {
         this.oauthServer.stop();
     }
 
-    public List<TraktMovie> getMovieHistory() throws TraktApiException {
+    public List<TraktMovie> syncMovieHistory() throws TraktApiException {
+        Date lastMovieSync = this.historyManager.getLastMovieSync();
+        List<TraktMovieHistoryResult> movies = getMovieHistory();
+
+        if (lastMovieSync != null) {
+            movies = movies.stream()
+                    .filter(o -> {
+                        try {
+                            return UrlUtils.parseISO8601Date(o.lastUpdatedAt).compareTo(lastMovieSync) > 0;
+                        } catch (ParseException e) {
+                            return false;
+                        }
+                    })
+                    .toList();
+        }
+
+        return movies.stream().map(o -> o.movie).toList();
+    }
+
+    public List<TraktMovieHistoryResult> getMovieHistory() throws TraktApiException {
         URI uri = URI.create(ApiBaseUrl + "/sync/watched/movies");
 
         HttpRequest req = HttpRequest.newBuilder(uri)
@@ -77,10 +107,19 @@ public class TraktApi {
         }
 
         try {
-            return Arrays.asList(UrlUtils.parseResponseBody(res.body(), TraktMovieHistoryResult[].class)).stream()
-                    .map(o -> o.movie).toList();
+            return Arrays.asList(UrlUtils.parseResponseBody(res.body(), TraktMovieHistoryResult[].class));
         } catch (IOException e) {
             throw new TraktApiException("Could not parse movie history: " + e.getMessage());
         }
+
     }
+
+    public List<TraktMovie> getWatchedMovies() throws TraktApiException {
+        return getMovieHistory().stream().map(o -> o.movie).toList();
+    }
+
+    public void setLastMovieSync(Date lastMovieSync) {
+        this.historyManager.setLastMovieSync(lastMovieSync);
+    }
+
 }

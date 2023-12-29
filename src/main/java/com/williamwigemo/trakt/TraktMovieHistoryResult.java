@@ -10,4 +10,7 @@ public class TraktMovieHistoryResult {
 
     @JsonProperty("movie")
     public TraktMovie movie;
+
+    @JsonProperty("last_updated_at")
+    public String lastUpdatedAt;
 }
