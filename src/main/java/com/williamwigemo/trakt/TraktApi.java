@@ -46,16 +46,18 @@ public class TraktApi {
         this.traktAuth.setCodeLatch(new CountDownLatch(1));
         this.oauthServer.start();
 
-        System.out.println("Authenticate to Trak.tv by following this link: " + this.traktAuth.getAuthLink());
+        if (!this.traktAuth.isAuthenticated()) {
+            System.out.println("Authenticate to Trak.tv by following this link: " + this.traktAuth.getAuthLink());
 
-        try {
-            this.traktAuth.fetchAccessToken();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            return;
-        } finally {
-            this.oauthServer.stop();
+            try {
+                this.traktAuth.fetchAccessToken();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                return;
+            }
         }
+
+        this.oauthServer.stop();
     }
 
     public List<TraktMovie> getMovieHistory() throws TraktApiException {

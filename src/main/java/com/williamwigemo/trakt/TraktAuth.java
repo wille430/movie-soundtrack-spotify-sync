@@ -36,7 +36,21 @@ public class TraktAuth {
     }
 
     public String getAccessToken() {
-        return accessToken;
+        if (this.accessToken != null) {
+            return this.accessToken;
+        }
+
+        String accessToken = this.accessToken = TraktAccessTokenManager.getAccessToken();
+
+        long unixTime = System.currentTimeMillis() / 1000L;
+
+        if (unixTime < TraktAccessTokenManager.getCreatedAt() + TraktAccessTokenManager.getExpiresIn()) {
+            this.accessToken = accessToken;
+        } else if (accessToken != null) {
+            // TODO: refresh token
+        }
+
+        return this.accessToken;
     }
 
     public String getCode() {
@@ -78,7 +92,11 @@ public class TraktAuth {
         }
 
         try {
-            return UrlUtils.parseResponseBody(responseBody, TraktOAuthTokenResponse.class).accessToken;
+            TraktOAuthTokenResponse oauthRes = UrlUtils.parseResponseBody(responseBody, TraktOAuthTokenResponse.class);
+
+            TraktAccessTokenManager.saveOAuthToken(oauthRes);
+
+            return oauthRes.accessToken;
         } catch (IOException e) {
             throw new TraktApiException("Could not parse content: " + e.getMessage());
         }
@@ -91,5 +109,9 @@ public class TraktAuth {
 
     public void setCodeLatch(CountDownLatch codeLatch) {
         this.codeLatch = codeLatch;
+    }
+
+    public boolean isAuthenticated() {
+        return this.getAccessToken() != null;
     }
 }
