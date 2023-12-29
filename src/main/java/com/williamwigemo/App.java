@@ -23,10 +23,12 @@ public class App {
 
     private final SpotifyAPI spotifyAPI;
     private final TraktApi traktApi;
+    private final AppCredentials appCredentials;
 
     public App() throws IOException {
-        this.spotifyAPI = new SpotifyAPI();
-        this.traktApi = new TraktApi();
+        this.appCredentials = new AppCredentials("app.properties");
+        this.spotifyAPI = new SpotifyAPI(this.appCredentials.getSpotifyClientId());
+        this.traktApi = new TraktApi(this.appCredentials);
     }
 
     private Map<TraktMovie, Set<SpotifyTrack>> loadSoundtracks(List<TraktMovie> history, Set<String> soundtrackNames)
@@ -111,7 +113,6 @@ public class App {
         List<TraktMovie> history;
         try {
             history = this.traktApi.getMovieHistory();
-            history = history.stream().limit(5).toList();
         } catch (TraktApiException e) {
             System.out.println("Failed to load movie history from Trakt.");
             e.printStackTrace();

@@ -26,17 +26,17 @@ import com.williamwigemo.UrlUtils;
 public class SpotifyAPI {
 
     private static final String ApiBaseUrl = "https://api.spotify.com/v1";
-
-    private final String clientId = "d3aa37733ede42e8a7b7d491ccc404f2";
     private HttpClient httpClient;
     private String accessToken = null;
     private SpotifyCurrentUser currentUser = null;
     private CountDownLatch accessTokenLatch;
     private final ObjectMapper objectMapper;
     private final SpotifyOauthServer oauthServer;
+    private String clientId;
 
-    public SpotifyAPI() throws IOException {
-        httpClient = HttpClient.newHttpClient();
+    public SpotifyAPI(String clientId) throws IOException {
+        this.clientId = clientId;
+        this.httpClient = HttpClient.newHttpClient();
         this.accessTokenLatch = new CountDownLatch(1);
         this.oauthServer = new SpotifyOauthServer(this);
         this.objectMapper = new ObjectMapper();

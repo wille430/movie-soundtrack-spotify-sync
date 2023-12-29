@@ -13,8 +13,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.williamwigemo.UrlUtils;
 
 public class TraktAuth {
-    public static final String ClientId = "b1aa2d6ad82198a082a961c11bd2dec11a261563b3058c7e93b7296290d0069a";
-    private static final String ClientSecret = "8e8c9639dea89bc35aeace933ca03f54efd33773c08c1d6a0f4f084a5afba028";
     private static final String RedirectUri = "http://localhost:3001/trakt/redirect";
 
     private String accessToken = null;
@@ -28,8 +26,8 @@ public class TraktAuth {
         this.codeLatch = new CountDownLatch(1);
     }
 
-    public static String getAuthLink() {
-        return "https://trakt.tv/oauth/authorize?client_id=" + ClientId
+    public String getAuthLink() {
+        return "https://trakt.tv/oauth/authorize?client_id=" + this.traktApi.getAppCredentials().traktClientId
                 + "&redirect_uri=http%3A%2F%2Flocalhost%3A3001%2Ftrakt%2Fredirect&response_type=code";
     }
 
@@ -55,8 +53,8 @@ public class TraktAuth {
 
         HashMap<String, String> parameters = new HashMap<>();
         parameters.put("code", code);
-        parameters.put("client_id", ClientId);
-        parameters.put("client_secret", ClientSecret);
+        parameters.put("client_id", this.traktApi.getAppCredentials().traktClientId);
+        parameters.put("client_secret", this.traktApi.getAppCredentials().traktClientSecret);
         parameters.put("redirect_uri", RedirectUri);
         parameters.put("grant_type", "authorization_code");
         String jsonData;
