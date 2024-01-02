@@ -96,7 +96,8 @@ public class MediaService {
 
     public void getSoundtracks(MediaEntity media) throws IOException {
         for (ImdbSoundtrackResult res : this.soundtrackFetcher.getSoundtracks(media.getImdbId())) {
-            SpotifyTrackEntity trackEntity = this.spotifyTracksService.getTrackByName(res.title);
+            SpotifyTrackEntity trackEntity = this.spotifyTracksService.getTrackByName(res.getTitle(),
+                    res.getCollaborators());
 
             if (trackEntity != null) {
                 addTrackToEntity(media, trackEntity);

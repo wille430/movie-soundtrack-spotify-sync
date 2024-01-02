@@ -19,5 +19,8 @@ public class ImdbSoundtrackFetcherTest {
     public void shouldReturnSoundtracks() throws IOException {
         List<ImdbSoundtrackResult> soundtracks = imdbSoundtrackFetcher.getSoundtracks("tt0137523");
         assertTrue(soundtracks.size() == 14);
+        assertTrue(soundtracks.get(0).getCollaborators().getComposedBy().equals("Rolfe Kent"));
+        assertTrue(soundtracks.get(0).getCollaborators().getPrimaryCollaborator().equals("Rolfe Kent"));
+        assertTrue(soundtracks.get(13).getCollaborators().getPrimaryCollaborator().equals("Pixies"));
     }
 }

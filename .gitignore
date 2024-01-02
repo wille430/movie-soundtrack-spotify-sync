@@ -1,3 +1,4 @@
 /.vscode
 /target
 app.properties
+database.db

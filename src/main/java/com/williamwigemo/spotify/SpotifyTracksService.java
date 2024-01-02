@@ -5,9 +5,11 @@ import java.util.Optional;
 
 import org.hibernate.Session;
 import org.hibernate.Transaction;
+import org.hibernate.exception.ConstraintViolationException;
 import org.hibernate.query.Query;
 
 import com.williamwigemo.HibernateUtil;
+import com.williamwigemo.ImdbSoundtrackResult.Collaborators;
 import com.williamwigemo.entities.SpotifyTrackEntity;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -22,8 +24,8 @@ public class SpotifyTracksService {
         this.spotifyAPI = spotifyAPI;
     }
 
-    public SpotifyTrackEntity getTrackByName(String trackName) {
-        SpotifyTrackEntity trackEntity = getTrackFromDb(trackName);
+    public SpotifyTrackEntity getTrackByName(String trackName, Collaborators collaborators) {
+        SpotifyTrackEntity trackEntity = getTrackFromDb(trackName, collaborators);
 
         if (trackEntity != null) {
             return trackEntity;
@@ -32,7 +34,7 @@ public class SpotifyTracksService {
         // else get from database and add it to database
         Optional<SpotifyTrack> track = null;
         try {
-            track = this.spotifyAPI.getTrackByName(trackName);
+            track = this.spotifyAPI.getTrackByName(trackName, collaborators.getPrimaryCollaborator());
         } catch (SpotifyApiException e) {
             return null;
         }
@@ -48,7 +50,13 @@ public class SpotifyTracksService {
         Session session = HibernateUtil.getSessionFactory().openSession();
         Transaction transaction = session.beginTransaction();
 
-        session.persist(entity);
+        try {
+            session.persist(entity);
+        } catch (ConstraintViolationException e) {
+            entity = session.byNaturalId(SpotifyTrackEntity.class)
+                    .using("spotifyUri", entity.getSpotifyUri())
+                    .load();
+        }
 
         transaction.commit();
         session.close();
@@ -56,15 +64,17 @@ public class SpotifyTracksService {
         return entity;
     }
 
-    private SpotifyTrackEntity getTrackFromDb(String trackName) {
+    private SpotifyTrackEntity getTrackFromDb(String trackName, Collaborators collaborators) {
         Session session = HibernateUtil.getSessionFactory().openSession();
         Transaction transaction = session.beginTransaction();
 
         CriteriaBuilder cb = session.getCriteriaBuilder();
         CriteriaQuery<SpotifyTrackEntity> cr = cb.createQuery(SpotifyTrackEntity.class);
         Root<SpotifyTrackEntity> root = cr.from(SpotifyTrackEntity.class);
+
         cr.select(root)
-                .where(cb.equal(root.get("trackName"), trackName));
+                .where(cb.equal(root.get("trackName"), trackName))
+                .where(cb.isMember(collaborators.getPrimaryCollaborator(), root.get("collaborators")));
 
         Query<SpotifyTrackEntity> query = session.createQuery(cr);
         List<SpotifyTrackEntity> results = query.getResultList();

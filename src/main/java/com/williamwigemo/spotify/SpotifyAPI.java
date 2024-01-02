@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -96,9 +97,22 @@ public class SpotifyAPI {
     }
 
     public Optional<SpotifyTrack> getTrackByName(String trackName) throws SpotifyApiException {
+        return getTrackByName(trackName, null);
+    }
+
+    public Optional<SpotifyTrack> getTrackByName(String trackName, String artist) throws SpotifyApiException {
         HashMap<String, String> parameters = new HashMap<>();
-        parameters.put("q", trackName);
         parameters.put("type", "track");
+
+        StringBuilder queryBuilder = new StringBuilder();
+
+        queryBuilder.append(trackName);
+        if (artist != null) {
+            queryBuilder.append(" " + "artist:" + artist);
+        }
+
+        parameters.put("q", queryBuilder.toString());
+
         String form = UrlUtils.getQueryString(parameters);
 
         URI uri = URI.create("https://api.spotify.com/v1/search?" + form);
@@ -120,8 +134,15 @@ public class SpotifyAPI {
             throw new SpotifyApiException("Could not parse contents: " + e.getMessage());
         }
 
-        return searchResponse.tracks.trackObjects.stream()
-                .filter(o -> o.name.toLowerCase().contains(trackName.toLowerCase())).findFirst();
+        Stream<SpotifyTrack> stream = searchResponse.tracks.trackObjects.stream()
+                .filter(o -> o.name.toLowerCase().contains(trackName.toLowerCase()));
+
+        if (artist != null) {
+            stream = stream
+                    .filter(o -> o.artists.stream().anyMatch(p -> p.name.toLowerCase().contains(artist.toLowerCase())));
+        }
+
+        return stream.findFirst();
     }
 
     public SpotifyPlaylist createPlaylist(String playlistName) throws SpotifyApiException {
