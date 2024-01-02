@@ -2,6 +2,7 @@ package com.williamwigemo.spotify;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.williamwigemo.entities.PlaylistEntity;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class SpotifyPlaylist {
@@ -19,4 +20,13 @@ public class SpotifyPlaylist {
 
     @JsonProperty("name")
     public String name;
+
+    public PlaylistEntity toEntity() {
+        PlaylistEntity entity = new PlaylistEntity();
+
+        entity.setPlaylistName(name);
+        entity.setSpotifyId(id);
+
+        return entity;
+    }
 }

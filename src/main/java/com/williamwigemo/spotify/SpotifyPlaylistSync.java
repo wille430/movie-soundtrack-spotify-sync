@@ -6,8 +6,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.williamwigemo.PlaylistService;
 import com.williamwigemo.SpotifyTrackMetrics;
-import com.williamwigemo.trakt.TraktMovie;
+import com.williamwigemo.entities.MediaEntity;
+import com.williamwigemo.entities.PlaylistEntity;
+import com.williamwigemo.entities.SpotifyTrackEntity;
 
 public class SpotifyPlaylistSync {
 
@@ -16,22 +19,35 @@ public class SpotifyPlaylistSync {
     private static final double MinSignificanceScore = 0.7;
 
     private SpotifyAPI spotifyAPI;
+    private PlaylistService playlistService;
 
     public SpotifyPlaylistSync(SpotifyAPI spotifyAPI) {
         this.spotifyAPI = spotifyAPI;
+        this.playlistService = new PlaylistService();
     }
 
-    private SpotifyPlaylist playlist = null;
+    private PlaylistEntity playlist = null;
 
-    private SpotifyPlaylist getPlaylist() throws SpotifyApiException {
+    private PlaylistEntity getPlaylist() throws SpotifyApiException {
         if (playlist == null) {
-            List<SpotifyPlaylist> playlists = this.spotifyAPI.getPlaylists();
+            // search database for playlist
 
-            if (!playlists.stream().anyMatch(l -> l.name.equals(PlaylistName))) {
-                // then create playlist
-                this.playlist = this.spotifyAPI.createPlaylist(PlaylistName);
+            PlaylistEntity existingPlaylist = this.playlistService.getPlaylistByName(PlaylistName);
+            if (existingPlaylist != null) {
+                this.playlist = existingPlaylist;
             } else {
-                this.playlist = playlists.stream().filter(o -> o.name.equals(PlaylistName)).findFirst().get();
+                // else fetch from spotify API
+                List<SpotifyPlaylist> playlists = this.spotifyAPI.getPlaylists();
+
+                if (!playlists.stream().anyMatch(l -> l.name.equals(PlaylistName))) {
+                    // then create playlist
+                    this.playlist = this.spotifyAPI.createPlaylist(PlaylistName).toEntity();
+                } else {
+                    this.playlist = playlists.stream().filter(o -> o.name.equals(PlaylistName)).findFirst().get()
+                            .toEntity();
+                }
+
+                this.playlistService.createPlaylist(this.playlist);
             }
         }
 
@@ -39,22 +55,22 @@ public class SpotifyPlaylistSync {
         return this.playlist;
     }
 
-    public Set<SpotifyTrack> updateMovies(Map<TraktMovie, Set<SpotifyTrack>> movieToTracksMap)
+    public Set<SpotifyTrackEntity> updateMovies(Map<MediaEntity, Set<SpotifyTrackEntity>> movieToTracksMap)
             throws SpotifyApiException {
-        SpotifyPlaylist playlist = getPlaylist();
+        PlaylistEntity playlist = getPlaylist();
         Set<String> spotifyIds = new HashSet<>();
-        Map<String, SpotifyTrack> uriToTrack = new HashMap<>();
+        Map<String, SpotifyTrackEntity> uriToTrack = new HashMap<>();
 
-        for (TraktMovie movie : movieToTracksMap.keySet()) {
-            Set<SpotifyTrack> tracks = movieToTracksMap.get(movie);
+        for (MediaEntity movie : movieToTracksMap.keySet()) {
+            Set<SpotifyTrackEntity> tracks = movieToTracksMap.get(movie);
             SpotifyTrackMetrics trackMetrics = new SpotifyTrackMetrics(tracks);
 
             // filter by "popularity"
-            for (SpotifyTrack track : tracks) {
+            for (SpotifyTrackEntity track : tracks) {
                 if (trackMetrics.getSignificanceScore(track) >= MinSignificanceScore
-                        && track.popularity >= MinPopularity) {
-                    spotifyIds.add(track.uri);
-                    uriToTrack.put(track.uri, track);
+                        && track.getPopularity() >= MinPopularity) {
+                    spotifyIds.add(track.getSpotifyUri());
+                    uriToTrack.put(track.getSpotifyUri(), track);
                 }
             }
         }
@@ -64,7 +80,7 @@ public class SpotifyPlaylistSync {
         SpotifyGetPlaylistTracksResponse res = null;
         do {
             if (res == null) {
-                res = this.spotifyAPI.getPlaylistTracksById(this.playlist.id);
+                res = this.spotifyAPI.getPlaylistTracksById(this.playlist.getSpotifyId());
             } else {
                 res = this.spotifyAPI.getPlaylistTracks(res.next);
             }
@@ -72,14 +88,14 @@ public class SpotifyPlaylistSync {
         } while (res.next != null);
         spotifyIds.removeAll(existingSpotifyUris);
 
-        Set<SpotifyTrack> tracksAdded = new HashSet<>();
+        Set<SpotifyTrackEntity> tracksAdded = new HashSet<>();
         for (String uri : uriToTrack.keySet()) {
             if (spotifyIds.contains(uri)) {
                 tracksAdded.add(uriToTrack.get(uri));
             }
         }
 
-        this.spotifyAPI.addItemsToPlaylist(playlist.id, spotifyIds.stream().toList());
+        this.spotifyAPI.addItemsToPlaylist(playlist.getSpotifyId(), spotifyIds.stream().toList());
         return tracksAdded;
     }
 }

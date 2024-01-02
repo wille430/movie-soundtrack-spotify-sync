@@ -4,27 +4,27 @@ import java.util.Comparator;
 import java.util.Optional;
 import java.util.Set;
 
-import com.williamwigemo.spotify.SpotifyTrack;
+import com.williamwigemo.entities.SpotifyTrackEntity;
 
-public class SpotifyTrackMetrics implements TrackMetrics<SpotifyTrack> {
+public class SpotifyTrackMetrics implements TrackMetrics<SpotifyTrackEntity> {
 
     private static final double RelPopularityWeight = 0.45;
     private static final double DefaultMaxPopularity = 50.0;
-    private Set<SpotifyTrack> allTracks;
+    private Set<SpotifyTrackEntity> allTracks;
     private Double maxPopularity;
 
-    public SpotifyTrackMetrics(Set<SpotifyTrack> allTracks) {
+    public SpotifyTrackMetrics(Set<SpotifyTrackEntity> allTracks) {
         this.allTracks = allTracks;
     }
 
     private double getMaxPopularity() {
         if (this.maxPopularity == null) {
-            Optional<SpotifyTrack> mostPopular = allTracks.stream()
-                    .sorted(Comparator.comparingInt(track -> ((SpotifyTrack) track).popularity).reversed())
+            Optional<SpotifyTrackEntity> mostPopular = allTracks.stream()
+                    .sorted(Comparator.comparingInt(track -> ((SpotifyTrackEntity) track).getPopularity()).reversed())
                     .findFirst();
 
             if (mostPopular.isPresent()) {
-                this.maxPopularity = (double) mostPopular.get().popularity;
+                this.maxPopularity = (double) mostPopular.get().getPopularity();
             } else {
                 this.maxPopularity = DefaultMaxPopularity;
             }
@@ -34,9 +34,9 @@ public class SpotifyTrackMetrics implements TrackMetrics<SpotifyTrack> {
     }
 
     @Override
-    public double getSignificanceScore(SpotifyTrack track) {
-        double relativePopularity = track.popularity / this.getMaxPopularity();
-        double popularity = track.popularity / 100.0;
+    public double getSignificanceScore(SpotifyTrackEntity track) {
+        double relativePopularity = track.getPopularity() / this.getMaxPopularity();
+        double popularity = track.getPopularity() / 100.0;
 
         return (RelPopularityWeight * relativePopularity) + ((1 - RelPopularityWeight) * popularity);
     }

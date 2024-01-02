@@ -8,18 +8,11 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.text.ParseException;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.williamwigemo.AppCredentials;
 import com.williamwigemo.UrlUtils;
 

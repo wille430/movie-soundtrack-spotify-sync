@@ -2,7 +2,6 @@ package com.williamwigemo.trakt;
 
 import java.text.ParseException;
 import java.util.Date;
-import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
 import com.williamwigemo.UrlUtils;

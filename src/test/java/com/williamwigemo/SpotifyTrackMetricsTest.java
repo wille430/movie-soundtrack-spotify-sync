@@ -11,12 +11,12 @@ import java.util.UUID;
 
 import org.junit.Test;
 
-import com.williamwigemo.spotify.SpotifyTrack;
+import com.williamwigemo.entities.SpotifyTrackEntity;
 
 public class SpotifyTrackMetricsTest {
 
-    private final Set<SpotifyTrack> trackSet;
-    private final List<SpotifyTrack> allTracks;
+    private final Set<SpotifyTrackEntity> trackSet;
+    private final List<SpotifyTrackEntity> allTracks;
 
     public SpotifyTrackMetricsTest() {
         this.trackSet = new HashSet<>();
@@ -25,9 +25,9 @@ public class SpotifyTrackMetricsTest {
 
     private void populateTracks(List<Integer> popularities) {
         for (Integer popularity : popularities) {
-            SpotifyTrack track = new SpotifyTrack();
-            track.popularity = popularity;
-            track.uri = UUID.randomUUID().toString();
+            SpotifyTrackEntity track = new SpotifyTrackEntity();
+            track.setPopularity(popularity);
+            track.setSpotifyUri(UUID.randomUUID().toString());
             this.trackSet.add(track);
             this.allTracks.add(track);
         }
@@ -38,7 +38,7 @@ public class SpotifyTrackMetricsTest {
         populateTracks(Arrays.asList(30, 50, 60));
         SpotifyTrackMetrics trackMetrics = new SpotifyTrackMetrics(trackSet);
 
-        SpotifyTrack track = allTracks.get(2);
+        SpotifyTrackEntity track = allTracks.get(2);
         double score = trackMetrics.getSignificanceScore(track);
         assertTrue(score - 0.6 > 0.0);
 

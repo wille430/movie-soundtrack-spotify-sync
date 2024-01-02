@@ -6,19 +6,15 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import java.util.prefs.BackingStoreException;
-import java.util.stream.Collectors;
 
+import com.williamwigemo.entities.MediaEntity;
+import com.williamwigemo.entities.SpotifyTrackEntity;
 import com.williamwigemo.spotify.SpotifyAPI;
 import com.williamwigemo.spotify.SpotifyApiException;
 import com.williamwigemo.spotify.SpotifyPlaylistSync;
-import com.williamwigemo.spotify.SpotifyTrack;
 import com.williamwigemo.trakt.TraktApi;
 import com.williamwigemo.trakt.TraktApiException;
-import com.williamwigemo.trakt.TraktHistoryManager;
-import com.williamwigemo.trakt.TraktMovie;
 
 import me.tongfei.progressbar.ProgressBar;
 
@@ -27,61 +23,40 @@ public class App {
     private final SpotifyAPI spotifyAPI;
     private final TraktApi traktApi;
     private final AppCredentials appCredentials;
+    private final MediaService mediaService;
 
     public App() throws IOException {
         this.appCredentials = new AppCredentials("app.properties");
         this.spotifyAPI = new SpotifyAPI(this.appCredentials.getSpotifyClientId());
         this.traktApi = new TraktApi(this.appCredentials);
+        this.mediaService = new MediaService(this.spotifyAPI);
     }
 
-    private Map<TraktMovie, Set<SpotifyTrack>> loadSoundtracks(List<TraktMovie> history, Set<String> soundtrackNames)
+    private Map<MediaEntity, Set<SpotifyTrackEntity>> loadSoundtracks(List<MediaEntity> history,
+            Set<String> soundtrackNames)
             throws IOException, SpotifyApiException {
 
-        ImdbSoundtrackFetcher imdbSoundtrackFetcher = new ImdbSoundtrackFetcher();
-        Map<String, Set<String>> imdbIdToTrackNames = new HashMap<>();
-        Map<String, TraktMovie> imdbIdToTraktMovie = new HashMap<>();
-
-        // for each movie, fetch soundtracks
-        for (TraktMovie movie : ProgressBar.wrap(history,
-                "Fetching soundtracks from " + history.size() + " movies")) {
-            String imdbId = movie.ids.imdb;
-            List<String> trackNames = imdbSoundtrackFetcher.getSoundtracks(imdbId).stream()
-                    .map(o -> o.title).toList();
-            soundtrackNames.addAll(trackNames);
-            imdbIdToTrackNames.put(imdbId, trackNames.stream().collect(Collectors.toSet()));
-            imdbIdToTraktMovie.put(imdbId, movie);
-        }
-
-        Map<TraktMovie, Set<SpotifyTrack>> imdbIdToTracks = new HashMap<>();
-
-        for (String imdbId : ProgressBar.wrap(imdbIdToTrackNames.keySet(), "Fetching Spotify tracks...")) {
-            Set<SpotifyTrack> tracks = new HashSet<>();
-
-            // for each soundtrack name, get the Spotify uri
-            for (String trackName : imdbIdToTrackNames.get(imdbId)) {
-                Optional<SpotifyTrack> track = this.spotifyAPI.getTrackByName(trackName);
-                if (track.isPresent()) {
-                    tracks.add(track.get());
-                }
-            }
-            imdbIdToTracks.put(imdbIdToTraktMovie.get(imdbId), tracks);
+        Map<MediaEntity, Set<SpotifyTrackEntity>> imdbIdToTracks = new HashMap<>();
+        for (MediaEntity entity : ProgressBar.wrap(history, "Fetching soundtracks...")) {
+            entity = this.mediaService.fetchMedia(entity);
+            imdbIdToTracks.put(entity, entity.getSoundtracks());
         }
 
         return imdbIdToTracks;
     }
 
-    private void displaySummary(List<TraktMovie> history, Map<TraktMovie, Set<SpotifyTrack>> movieToTracksMap,
-            Set<SpotifyTrack> allTracksAdded) {
+    private void displaySummary(List<MediaEntity> history, Map<MediaEntity, Set<SpotifyTrackEntity>> movieToTracksMap,
+            Set<SpotifyTrackEntity> allTracksAdded) {
         // print summary
         System.out.println("Tracks added: " + allTracksAdded.size());
         System.out.println("Number of movies: " + history.size());
         System.out.println();
 
-        for (TraktMovie movie : movieToTracksMap.keySet()) {
-            Set<SpotifyTrack> tracks = movieToTracksMap.get(movie);
-            Set<SpotifyTrack> tracksAdded = new HashSet<>();
+        for (MediaEntity movie : movieToTracksMap.keySet()) {
+            Set<SpotifyTrackEntity> tracks = movieToTracksMap.get(movie);
+            Set<SpotifyTrackEntity> tracksAdded = new HashSet<>();
 
-            for (SpotifyTrack track : tracks) {
+            for (SpotifyTrackEntity track : tracks) {
                 if (allTracksAdded.contains(track)) {
                     tracksAdded.add(track);
                 }
@@ -91,13 +66,13 @@ public class App {
                 continue;
             }
 
-            System.out.print(movie.title + " (" + movie.year + "): ");
+            System.out.print(movie.getTitle() + " (" + movie.getYear() + "): ");
 
             System.out.println("Added " + tracksAdded.size() + " tracks");
 
-            for (SpotifyTrack track : tracksAdded) {
-                String artists = String.join(", ", track.artists.stream().limit(3).map(o -> o.name).toList());
-                System.out.println("   - " + artists + ": " + track.name);
+            for (SpotifyTrackEntity track : tracksAdded) {
+                String collaborators = String.join(", ", track.getCollaborators().stream().limit(3).toList());
+                System.out.println("   - " + collaborators + ": " + track.getTrackName());
             }
             System.out.println();
         }
@@ -115,9 +90,9 @@ public class App {
         this.spotifyAPI.authenticate();
 
         // load watched movies
-        List<TraktMovie> history;
+        List<MediaEntity> history;
         try {
-            history = this.traktApi.getWatchedMovies();
+            history = this.traktApi.getWatchedMovies().stream().map(o -> o.toEntity()).toList();
         } catch (TraktApiException e) {
             System.out.println("Failed to load movie history from Trakt.");
             e.printStackTrace();
@@ -127,7 +102,7 @@ public class App {
         // load soundtracks to respective movie
         Set<String> soundtrackNames = new HashSet<>();
 
-        Map<TraktMovie, Set<SpotifyTrack>> movieToTracksMap;
+        Map<MediaEntity, Set<SpotifyTrackEntity>> movieToTracksMap;
         try {
             movieToTracksMap = loadSoundtracks(history, soundtrackNames);
         } catch (SpotifyApiException | IOException e) {
@@ -140,7 +115,7 @@ public class App {
         SpotifyPlaylistSync playlistSync = new SpotifyPlaylistSync(spotifyAPI);
 
         System.out.println("Populating playlist with new soundtracks...");
-        Set<SpotifyTrack> tracksAdded;
+        Set<SpotifyTrackEntity> tracksAdded;
         try {
             tracksAdded = playlistSync.updateMovies(movieToTracksMap);
         } catch (SpotifyApiException e) {
