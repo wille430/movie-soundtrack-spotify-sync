@@ -1,6 +1,7 @@
 package com.williamwigemo;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
@@ -67,6 +68,8 @@ public class MediaService {
         Transaction transaction = session.beginTransaction();
 
         mediaEntity.setSoundtracks(new HashSet<>(session.get(MediaEntity.class, mediaEntity.getId()).getSoundtracks()));
+
+        mediaEntity.getSoundtracks().forEach(o -> o.setCollaborators(new ArrayList<>(o.getCollaborators())));
 
         transaction.commit();
         session.close();

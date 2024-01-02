@@ -1,6 +1,7 @@
 package com.williamwigemo;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -49,7 +50,8 @@ public class App {
             Set<SpotifyTrackEntity> allTracksAdded) {
         // print summary
         System.out.println("Tracks added: " + allTracksAdded.size());
-        System.out.println("Number of movies: " + history.size());
+        System.out.println("Tracks already in playlist: " + (history.size() - allTracksAdded.size()));
+        System.out.println("Number of movies and shows: " + history.size());
         System.out.println();
 
         for (MediaEntity movie : movieToTracksMap.keySet()) {
@@ -90,9 +92,10 @@ public class App {
         this.spotifyAPI.authenticate();
 
         // load watched movies
-        List<MediaEntity> history;
+        List<MediaEntity> history = new ArrayList<>();
         try {
-            history = this.traktApi.getWatchedMovies().stream().map(o -> o.toEntity()).toList();
+            this.traktApi.getWatchedMovies().stream().map(o -> o.toEntity()).forEach(history::add);
+            this.traktApi.getShowsHistory().stream().map(o -> o.getShow().toEntity()).forEach(history::add);
         } catch (TraktApiException e) {
             System.out.println("Failed to load movie history from Trakt.");
             e.printStackTrace();

@@ -72,7 +72,7 @@ public class TraktApi {
             movies = movies.stream()
                     .filter(o -> {
                         try {
-                            return UrlUtils.parseISO8601Date(o.lastUpdatedAt).compareTo(lastMovieSync) > 0;
+                            return UrlUtils.parseISO8601Date(o.getLastUpdatedAt()).compareTo(lastMovieSync) > 0;
                         } catch (ParseException e) {
                             return false;
                         }
@@ -80,11 +80,16 @@ public class TraktApi {
                     .toList();
         }
 
-        return movies.stream().map(o -> o.movie).toList();
+        return movies.stream().map(o -> o.getMovie()).toList();
     }
 
     public List<TraktMovieHistoryResult> getMovieHistory() throws TraktApiException {
-        URI uri = URI.create(ApiBaseUrl + "/sync/watched/movies");
+        return getHistory("movies", TraktMovieHistoryResult[].class);
+    }
+
+    public <T extends TraktWatchedResult<?>> List<T> getHistory(String type, Class<T[]> cls)
+            throws TraktApiException {
+        URI uri = URI.create(ApiBaseUrl + "/sync/watched/" + type);
 
         HttpRequest req = HttpRequest.newBuilder(uri)
                 .header("Content-Type", "application/json")
@@ -100,19 +105,22 @@ public class TraktApi {
         }
 
         try {
-            return Arrays.asList(UrlUtils.parseResponseBody(res.body(), TraktMovieHistoryResult[].class));
+            return Arrays.asList(UrlUtils.parseResponseBody(res.body(), cls));
         } catch (IOException e) {
-            throw new TraktApiException("Could not parse movie history: " + e.getMessage());
+            throw new TraktApiException("Could not parse history: " + e.getMessage());
         }
 
     }
 
+    public List<TraktWatchedShowsResult> getShowsHistory() throws TraktApiException {
+        return getHistory("shows", TraktWatchedShowsResult[].class);
+    }
+
     public List<TraktMovie> getWatchedMovies() throws TraktApiException {
-        return getMovieHistory().stream().map(o -> o.movie).toList();
+        return getMovieHistory().stream().map(o -> o.getMovie()).toList();
     }
 
     public void setLastMovieSync(Date lastMovieSync) {
         this.historyManager.setLastMovieSync(lastMovieSync);
     }
-
 }
