@@ -180,10 +180,16 @@ public class SpotifyAPI {
         return res.body().get().items;
     }
 
-    public void addItemsToPlaylist(String playlistId, List<String> spotifyIds) throws SpotifyApiException {
+    private void addItemsToPlaylist(String playlistId, List<String> spotifyIds, int start) throws SpotifyApiException {
         if (spotifyIds.isEmpty()) {
             return;
         }
+
+        if (start > spotifyIds.size() - 1) {
+            return;
+        }
+
+        spotifyIds = spotifyIds.subList(start, Math.min(spotifyIds.size(), start + 100));
 
         URI uri = URI.create(ApiBaseUrl + "/playlists/" + playlistId + "/tracks");
 
@@ -205,6 +211,12 @@ public class SpotifyAPI {
 
         if (res.statusCode() != 201) {
             throw new SpotifyApiException(res);
+        }
+    }
+
+    public void addItemsToPlaylist(String playlistId, List<String> spotifyIds) throws SpotifyApiException {
+        for (int i = 0; i < spotifyIds.size(); i += 100) {
+            addItemsToPlaylist(playlistId, spotifyIds, i);
         }
     }
 

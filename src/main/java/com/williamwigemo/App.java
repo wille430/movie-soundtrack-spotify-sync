@@ -117,7 +117,7 @@ public class App {
         // load watched movies
         List<TraktMovie> history;
         try {
-            history = this.traktApi.syncMovieHistory();
+            history = this.traktApi.getWatchedMovies();
         } catch (TraktApiException e) {
             System.out.println("Failed to load movie history from Trakt.");
             e.printStackTrace();
