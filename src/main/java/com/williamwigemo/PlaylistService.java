@@ -29,7 +29,7 @@ public class PlaylistService {
         transaction.commit();
         session.close();
 
-        return results.isEmpty() ? null : results.getFirst();
+        return results.isEmpty() ? null : results.get(0);
     }
 
     public PlaylistEntity createPlaylist(PlaylistEntity playlistEntity) {

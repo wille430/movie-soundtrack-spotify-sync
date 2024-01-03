@@ -1,5 +1,8 @@
 package com.williamwigemo;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class ImdbSoundtrackResult {
     private String title;
 
@@ -35,6 +38,12 @@ public class ImdbSoundtrackResult {
         public String getPrimaryCollaborator() {
             return performedBy != null ? performedBy
                     : writtenBy != null ? writtenBy : composedBy != null ? composedBy : null;
+        }
+
+        public List<String> toList() {
+            return Arrays
+                    .asList(this.performedBy, this.writtenBy, this.composedBy)
+                    .stream().filter(o -> o != null).toList();
         }
     }
 

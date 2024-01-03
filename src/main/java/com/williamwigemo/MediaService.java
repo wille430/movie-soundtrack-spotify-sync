@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.logging.Logger;
 
 import org.hibernate.Session;
 import org.hibernate.Transaction;
@@ -23,6 +24,7 @@ public class MediaService {
     private static final int MillisToNextSoundtrackFetch = 5 * 60 * 60 * 1000;
     private final ImdbSoundtrackFetcher soundtrackFetcher;
     private final SpotifyTracksService spotifyTracksService;
+    private final Logger logger = AppLogging.buildLogger(MediaService.class);
 
     public MediaService(SpotifyAPI spotifyAPI) {
         this.soundtrackFetcher = new ImdbSoundtrackFetcher();
@@ -45,7 +47,7 @@ public class MediaService {
         transaction.commit();
         session.close();
 
-        return results.isEmpty() ? null : results.getFirst();
+        return results.isEmpty() ? null : results.get(0);
     }
 
     public MediaEntity fetchMedia(MediaEntity entity) {
@@ -53,15 +55,19 @@ public class MediaService {
         MediaEntity mediaEntity = getMediaByImdbId(entity.getImdbId());
         if (mediaEntity == null) {
             // then create it
+            logger.fine(String.format("Media \"%s\" was not in database, creating new media", entity.getTitle()));
             mediaEntity = createMedia(entity);
         }
 
         if (shouldFetchSoundtracks(mediaEntity)) {
             try {
+                logger.fine(String.format("Fetching soundtracks from %s...", entity.toString()));
                 getSoundtracks(mediaEntity);
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        } else {
+            logger.fine(String.format("Soundtracks from %s was recently fetched. Skipping.", entity.toString()));
         }
 
         Session session = HibernateUtil.getSessionFactory().openSession();
@@ -96,7 +102,7 @@ public class MediaService {
 
     public void getSoundtracks(MediaEntity media) throws IOException {
         for (ImdbSoundtrackResult res : this.soundtrackFetcher.getSoundtracks(media.getImdbId())) {
-            SpotifyTrackEntity trackEntity = this.spotifyTracksService.getTrackByName(res.getTitle(),
+            SpotifyTrackEntity trackEntity = this.spotifyTracksService.findTrack(res.getTitle(),
                     res.getCollaborators());
 
             if (trackEntity != null) {

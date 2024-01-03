@@ -91,4 +91,9 @@ public class MediaEntity {
     public void setId(Long id) {
         this.id = id;
     }
+
+    @Override
+    public String toString() {
+        return String.format("\"%s (%s)\" (%s) ", this.title, this.year, this.imdbId);
+    }
 }

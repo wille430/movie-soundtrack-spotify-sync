@@ -30,10 +30,10 @@ public class SpotifyTrackEntity {
     @Column(name = "trackName", nullable = false)
     private String trackName;
 
-    @Column(name = "spotifyUri", nullable = false, unique = true)
+    @Column(name = "spotifyUri", nullable = true, unique = true)
     private String spotifyUri;
 
-    @Column(name = "popularity")
+    @Column(name = "popularity", nullable = true)
     private Integer popularity;
 
     @ElementCollection
@@ -44,6 +44,16 @@ public class SpotifyTrackEntity {
 
     @ManyToMany(mappedBy = "soundtracks")
     private Set<MediaEntity> medias = new HashSet<>();
+
+    public SpotifyTrackEntity() {
+
+    }
+
+    public SpotifyTrackEntity(String trackName, List<String> collaborators) {
+        this.setTrackName(trackName);
+        this.getCollaborators().addAll(collaborators);
+        this.setPopularity(0);
+    }
 
     public Long getId() {
         return id;
@@ -83,10 +93,6 @@ public class SpotifyTrackEntity {
 
     public void setCollaborators(List<String> collaborators) {
         this.collaborators = collaborators;
-    }
-
-    public void setPopularity(Integer popularity) {
-        this.popularity = popularity;
     }
 
     public Set<MediaEntity> getMedias() {

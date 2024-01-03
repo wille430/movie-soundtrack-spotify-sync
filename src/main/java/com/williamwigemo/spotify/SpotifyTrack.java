@@ -1,5 +1,6 @@
 package com.williamwigemo.spotify;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -18,7 +19,7 @@ public class SpotifyTrack {
     public int popularity;
 
     @JsonProperty("artists")
-    public List<SpotifyArtist> artists;
+    public List<SpotifyArtist> artists = new ArrayList<>();
 
     @Override
     public int hashCode() {

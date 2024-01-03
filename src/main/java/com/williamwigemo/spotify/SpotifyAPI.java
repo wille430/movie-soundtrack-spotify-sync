@@ -19,6 +19,7 @@ import java.util.stream.Stream;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.williamwigemo.JsonBodyHandler;
+import com.williamwigemo.TrackSimilarity;
 import com.williamwigemo.UrlUtils;
 
 public class SpotifyAPI {
@@ -135,12 +136,7 @@ public class SpotifyAPI {
         }
 
         Stream<SpotifyTrack> stream = searchResponse.tracks.trackObjects.stream()
-                .filter(o -> o.name.toLowerCase().contains(trackName.toLowerCase()));
-
-        if (artist != null) {
-            stream = stream
-                    .filter(o -> o.artists.stream().anyMatch(p -> p.name.toLowerCase().contains(artist.toLowerCase())));
-        }
+                .filter(o -> TrackSimilarity.isSameTrack(o, trackName, artist));
 
         return stream.findFirst();
     }
