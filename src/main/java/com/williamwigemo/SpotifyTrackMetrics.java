@@ -10,6 +10,10 @@ public class SpotifyTrackMetrics implements TrackMetrics<SpotifyTrackEntity> {
 
     private static final double RelPopularityWeight = 0.45;
     private static final double DefaultMaxPopularity = 50.0;
+
+    private static final int MinPopularity = 64;
+    private static final double MinSignificanceScore = 0.7;
+
     private Set<SpotifyTrackEntity> allTracks;
     private Double maxPopularity;
 
@@ -31,6 +35,11 @@ public class SpotifyTrackMetrics implements TrackMetrics<SpotifyTrackEntity> {
         }
 
         return this.maxPopularity;
+    }
+
+    public boolean isSignificant(SpotifyTrackEntity track) {
+        return this.getSignificanceScore(track) >= MinSignificanceScore
+                && track.getPopularity() >= MinPopularity;
     }
 
     @Override
