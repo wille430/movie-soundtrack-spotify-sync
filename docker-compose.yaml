@@ -1,7 +1,7 @@
 version: "3"
 services:
   app:
-    image: movie-soundtrack-spotify-sync:1.0
+    image: movie-soundtrack-spotify-sync
     container_name: movie-soundtracks-spotify-sync
     build: ./
     restart: unless-stopped
