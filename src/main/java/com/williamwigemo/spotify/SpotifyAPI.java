@@ -19,6 +19,7 @@ import java.util.stream.Stream;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.williamwigemo.JsonBodyHandler;
+import com.williamwigemo.OAuthHttpServer;
 import com.williamwigemo.TrackSimilarity;
 import com.williamwigemo.UrlUtils;
 
@@ -28,7 +29,6 @@ public class SpotifyAPI {
     private HttpClient httpClient;
     private SpotifyCurrentUser currentUser = null;
     private final ObjectMapper objectMapper;
-    private final SpotifyOauthServer oauthServer;
     private String clientId;
     private SpotifyAuth spotifyAuth;
 
@@ -37,7 +37,6 @@ public class SpotifyAPI {
         this.httpClient = HttpClient.newHttpClient();
         this.objectMapper = new ObjectMapper();
         this.spotifyAuth = new SpotifyAuth();
-        this.oauthServer = new SpotifyOauthServer(this.spotifyAuth);
     }
 
     private <T> HttpResponse<T> sendRequest(HttpRequest req, BodyHandler<T> bodyHandler)
@@ -67,19 +66,21 @@ public class SpotifyAPI {
         return this.currentUser;
     }
 
-    public void authenticate() {
+    public void authenticate() throws IOException {
         if (this.spotifyAuth.isAuthenticated()) {
             return;
         }
 
         this.spotifyAuth.setAccessTokenLatch(new CountDownLatch(1));
-        this.oauthServer.start();
+
+        OAuthHttpServer httpServer = OAuthHttpServer.getInstance();
+        httpServer.start(new SpotifyOAuthContexts(this.spotifyAuth));
 
         List<String> scopes = Arrays.asList("playlist-read-private", "user-read-private", "playlist-modify-private");
         HashMap<String, String> parameters = new HashMap<>();
         parameters.put("client_id", this.clientId);
         parameters.put("response_type", "token");
-        parameters.put("redirect_uri", "http://localhost:3000/spotify/redirect");
+        parameters.put("redirect_uri", OAuthHttpServer.getBaseUrl() + "/spotify/redirect");
         parameters.put("scope", (String.join(" ", scopes)));
         String form = UrlUtils.getQueryString(parameters);
 
@@ -93,7 +94,7 @@ public class SpotifyAPI {
             e.printStackTrace();
             return;
         } finally {
-            this.oauthServer.stop();
+            httpServer.stop();
         }
     }
 

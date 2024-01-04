@@ -13,7 +13,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
-import com.williamwigemo.AppCredentials;
+import com.williamwigemo.AppSettings;
+import com.williamwigemo.OAuthHttpServer;
 import com.williamwigemo.UrlUtils;
 
 public class TraktApi {
@@ -21,20 +22,14 @@ public class TraktApi {
     public static final String ApiBaseUrl = "https://api.trakt.tv";
     private final HttpClient httpClient;
     private final TraktAuth traktAuth;
-    private final TraktOAuthServer oauthServer;
-    private final AppCredentials appCredentials;
+    private final AppSettings appCredentials;
     private final TraktHistoryManager historyManager;
 
-    public TraktApi(AppCredentials appCredentials) throws IOException {
+    public TraktApi() throws IOException {
         this.httpClient = HttpClient.newHttpClient();
         this.traktAuth = new TraktAuth(this);
-        this.oauthServer = new TraktOAuthServer(this.traktAuth);
-        this.appCredentials = appCredentials;
+        this.appCredentials = AppSettings.getSettings();
         this.historyManager = TraktHistoryManager.getInstance();
-    }
-
-    public AppCredentials getAppCredentials() {
-        return appCredentials;
     }
 
     public <T> HttpResponse<T> sendRequest(HttpRequest req, BodyHandler<T> bodyHandler)
@@ -46,22 +41,26 @@ public class TraktApi {
         }
     }
 
-    public void authenticate() throws TraktApiException {
-        this.traktAuth.setCodeLatch(new CountDownLatch(1));
-        this.oauthServer.start();
-
-        if (!this.traktAuth.isAuthenticated()) {
-            System.out.println("Authenticate to Trak.tv by following this link: " + this.traktAuth.getAuthLink());
-
-            try {
-                this.traktAuth.fetchAccessToken();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                return;
-            }
+    public void authenticate() throws TraktApiException, IOException {
+        if (this.traktAuth.isAuthenticated()) {
+            return;
         }
 
-        this.oauthServer.stop();
+        this.traktAuth.setCodeLatch(new CountDownLatch(1));
+
+        OAuthHttpServer httpServer = OAuthHttpServer.getInstance();
+        httpServer.start(new TraktOAuthContexts(this.traktAuth));
+
+        System.out.println("Authenticate to Trak.tv by following this link: " + this.traktAuth.getAuthLink());
+
+        try {
+            this.traktAuth.fetchAccessToken();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        httpServer.stop();
     }
 
     public List<TraktMovie> syncMovieHistory() throws TraktApiException {

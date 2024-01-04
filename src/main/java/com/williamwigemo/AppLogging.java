@@ -9,6 +9,8 @@ public class AppLogging {
     public static <T> Logger buildLogger(Class<T> cls) {
         Logger logger = Logger.getLogger(cls.getName());
 
+        logger.setUseParentHandlers(false);
+
         logger.setLevel(Level.FINE);
 
         Handler consoleHandler = new ConsoleHandler();

@@ -1,0 +1,10 @@
+version: "3"
+services:
+  app:
+    image: movie-soundtrack-spotify-sync:1.0
+    container_name: movie-soundtracks-spotify-sync
+    build: ./
+    restart: unless-stopped
+    env_file: ./app.properties
+    ports:
+      - 3000:3000

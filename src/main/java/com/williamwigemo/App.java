@@ -23,13 +23,13 @@ public class App {
 
     private final SpotifyAPI spotifyAPI;
     private final TraktApi traktApi;
-    private final AppCredentials appCredentials;
+    private final AppSettings appCredentials;
     private final MediaService mediaService;
 
     public App() throws IOException {
-        this.appCredentials = new AppCredentials("app.properties");
+        this.appCredentials = AppSettings.getSettings();
         this.spotifyAPI = new SpotifyAPI(this.appCredentials.getSpotifyClientId());
-        this.traktApi = new TraktApi(this.appCredentials);
+        this.traktApi = new TraktApi();
         this.mediaService = new MediaService(this.spotifyAPI);
     }
 
@@ -51,11 +51,16 @@ public class App {
 
         try {
             this.traktApi.authenticate();
-        } catch (TraktApiException e) {
+        } catch (TraktApiException | IOException e) {
             System.out.println("Failed to authenticate with Trakt.");
             e.printStackTrace();
         }
-        this.spotifyAPI.authenticate();
+        try {
+            this.spotifyAPI.authenticate();
+        } catch (IOException e) {
+            System.out.println("Failed to authenticate with Spotify.");
+            e.printStackTrace();
+        }
 
         // load watched movies
         List<MediaEntity> history = new ArrayList<>();

@@ -10,10 +10,12 @@ import java.util.HashMap;
 import java.util.concurrent.CountDownLatch;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.williamwigemo.AppSettings;
+import com.williamwigemo.OAuthHttpServer;
 import com.williamwigemo.UrlUtils;
 
 public class TraktAuth {
-    private static final String RedirectUri = "http://localhost:3001/trakt/redirect";
+    private static final String RedirectUri = OAuthHttpServer.getBaseUrl() + "/trakt/redirect";
 
     private String accessToken = null;
     private String code = null;
@@ -27,8 +29,8 @@ public class TraktAuth {
     }
 
     public String getAuthLink() {
-        return "https://trakt.tv/oauth/authorize?client_id=" + this.traktApi.getAppCredentials().traktClientId
-                + "&redirect_uri=http%3A%2F%2Flocalhost%3A3001%2Ftrakt%2Fredirect&response_type=code";
+        return String.format("https://trakt.tv/oauth/authorize?client_id=%s&redirect_uri=%s&response_type=code",
+                AppSettings.getSettings().getTraktClientId(), RedirectUri);
     }
 
     public void setAccessToken(String accessToken) {
@@ -65,10 +67,12 @@ public class TraktAuth {
     public String getAccessTokenFromCode(String code) throws TraktApiException {
         URI uri = URI.create(TraktApi.ApiBaseUrl + "/oauth/token");
 
+        AppSettings creds = AppSettings.getSettings();
+
         HashMap<String, String> parameters = new HashMap<>();
         parameters.put("code", code);
-        parameters.put("client_id", this.traktApi.getAppCredentials().traktClientId);
-        parameters.put("client_secret", this.traktApi.getAppCredentials().traktClientSecret);
+        parameters.put("client_id", creds.traktClientId);
+        parameters.put("client_secret", creds.traktClientSecret);
         parameters.put("redirect_uri", RedirectUri);
         parameters.put("grant_type", "authorization_code");
         String jsonData;
