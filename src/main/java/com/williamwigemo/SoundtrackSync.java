@@ -40,6 +40,9 @@ public class SoundtrackSync {
 
         Map<MediaEntity, Set<SpotifyTrackEntity>> imdbIdToTracks = new HashMap<>();
         for (MediaEntity entity : history) {
+            logger.info(String.format("(%s/%s) Fetching soundtracks from %s", imdbIdToTracks.size() + 1, history.size(),
+                    entity.toString()));
+
             entity = this.mediaService.fetchMedia(entity);
             imdbIdToTracks.put(entity, entity.getSoundtracks());
         }

@@ -61,7 +61,8 @@ public class MediaService {
 
         if (shouldFetchSoundtracks(mediaEntity)) {
             try {
-                logger.fine(String.format("Fetching soundtracks from %s...", entity.toString()));
+                // logger.fine(String.format("Fetching soundtracks from %s...",
+                // entity.toString()));
                 getSoundtracks(mediaEntity);
             } catch (IOException e) {
                 e.printStackTrace();
