@@ -15,14 +15,13 @@ import com.williamwigemo.AppLogging;
 import com.williamwigemo.AppSettings;
 import com.williamwigemo.OAuthCredentialsResponse;
 import com.williamwigemo.OAuthHandler;
-import com.williamwigemo.OAuthHttpServer;
 import com.williamwigemo.UrlUtils;
 import com.williamwigemo.spotify.dtos.SpotifyOAuthTokenResponse;
 
 public class SpotifyAuth extends OAuthHandler<SpotifyApiException> {
 
     private static final String AccountBaseUrl = "https://accounts.spotify.com";
-    private static final String RedirectUrl = OAuthHttpServer.getBaseUrl() + "/spotify/redirect";
+    private static final String RedirectUrl = AppSettings.getSettings().getAppUrl() + "/spotify/redirect";
 
     private SpotifyAPI spotifyAPI;
 

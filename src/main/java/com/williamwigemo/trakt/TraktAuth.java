@@ -13,12 +13,11 @@ import com.williamwigemo.AppLogging;
 import com.williamwigemo.AppSettings;
 import com.williamwigemo.OAuthCredentialsResponse;
 import com.williamwigemo.OAuthHandler;
-import com.williamwigemo.OAuthHttpServer;
 import com.williamwigemo.UrlUtils;
 import com.williamwigemo.trakt.dtos.TraktOAuthTokenResponse;
 
 public class TraktAuth extends OAuthHandler<TraktApiException> {
-    private static final String RedirectUri = OAuthHttpServer.getBaseUrl() + "/trakt/redirect";
+    private static final String RedirectUri = AppSettings.getSettings().getAppUrl() + "/trakt/redirect";
 
     private final TraktApi traktApi;
 

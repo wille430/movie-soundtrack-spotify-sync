@@ -2,6 +2,8 @@ package com.williamwigemo;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Properties;
 import java.util.logging.Logger;
 
@@ -11,8 +13,10 @@ public class AppSettings {
     private static final String SPOTIFY_CLIENT_ID = "SPOTIFY_CLIENT_ID";
     private static final String SPOTIFY_CLIENT_SECRET = "SPOTIFY_CLIENT_SECRET";
     private static final String PORT = "PORT";
+    private static final String APP_URL = "APP_URL";
 
-    private static final int DefaultPort = 3000;
+    private static final int DefaultPort = 300;
+    private static final String DefaultHostname = "localhost";
 
     private static AppSettings appCredentials;
 
@@ -20,7 +24,8 @@ public class AppSettings {
     public String traktClientSecret;
     public String spotifyClientId;
     public String spotifyClientSecret;
-    public Integer port;
+    private Integer port;
+    private String appUrl;
 
     private static final Logger logger = AppLogging.buildLogger(AppSettings.class);
 
@@ -41,6 +46,7 @@ public class AppSettings {
         this.traktClientSecret = properties.getProperty(TRAKT_CLIENT_SECRET);
         this.spotifyClientId = properties.getProperty(SPOTIFY_CLIENT_ID);
         this.spotifyClientSecret = properties.getProperty(SPOTIFY_CLIENT_SECRET);
+        this.setAppUrl(properties.getProperty(APP_URL));
 
         if (properties.getProperty(PORT) != null)
             this.setPort(properties.getProperty(PORT));
@@ -61,6 +67,9 @@ public class AppSettings {
 
         if (System.getenv(PORT) != null)
             this.setPort(System.getenv(PORT));
+
+        if (System.getenv(APP_URL) != null)
+            this.setAppUrl(System.getenv(APP_URL));
     }
 
     private void throwMissingProperty(String property) {
@@ -85,9 +94,12 @@ public class AppSettings {
 
     private void assignDefaults() {
         if (this.port == null) {
-            logger.info(String.format("No port was specified. Using default port (port %s)", DefaultPort));
+            logger.fine(String.format("No port was specified. Using default port (port %s)", DefaultPort));
             this.port = DefaultPort;
         }
+
+        if (this.appUrl == null)
+            this.appUrl = String.format("http://%s:%s", DefaultHostname, DefaultPort);
     }
 
     public AppSettings(String filePath) {
@@ -126,6 +138,22 @@ public class AppSettings {
 
     public Integer getPort() {
         return port;
+    }
+
+    public String getAppUrl() {
+        return appUrl;
+    }
+
+    private void setAppUrl(String url) {
+        if (url == null)
+            return;
+
+        try {
+            new URI(url);
+            this.appUrl = url;
+        } catch (URISyntaxException e) {
+            logger.warning(String.format("%s is not a valid url", url));
+        }
     }
 
     public String getSpotifyClientSecret() {

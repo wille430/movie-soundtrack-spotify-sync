@@ -15,8 +15,7 @@ public class OAuthHttpServer {
     private final Logger logger = AppLogging.buildLogger(OAuthHttpServer.class);
 
     private static final AppSettings Settings = AppSettings.getSettings();
-    public static final int Port = Settings.port;
-    private static final String Domain = "localhost";
+    public static final int Port = Settings.getPort();
 
     public static OAuthHttpServer getInstance() throws IOException {
         if (oAuthHttpServer == null) {
@@ -29,10 +28,6 @@ public class OAuthHttpServer {
     private OAuthHttpServer() {
     }
 
-    public static String getBaseUrl() {
-        return String.format("http://%s:%s", Domain, Port);
-    }
-
     public void start(OAuthContexts oAuthServer) throws IOException {
         if (this.httpServer != null) {
             throw new RuntimeException("OAuth server is already in use");
@@ -43,7 +38,7 @@ public class OAuthHttpServer {
         Map<String, HttpHandler> contexts = oAuthServer.getContexts();
 
         for (String path : contexts.keySet()) {
-            logger.fine(String.format("Created endpoint at %s%s", getBaseUrl(), path));
+            logger.fine(String.format("Created endpoint at %s%s", Settings.getAppUrl(), path));
             HttpHandler handler = contexts.get(path);
             this.httpServer.createContext(path, handler);
         }

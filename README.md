@@ -2,13 +2,14 @@
 
 ### Environment variables
 
-| Env                   | Function                                                        | Required |
-| --------------------- | --------------------------------------------------------------- | -------- |
-| TRAKT_CLIENT_ID       | Client ID of your Trakt.tv application                          | Yes      |
-| TRAKT_CLIENT_SECRET   | Client secret of your Trakt.tv application                      | Yes      |
-| SPOTIFY_CLIENT_ID     | CLient ID of your Spotify application                           | Yes      |
-| SPOTIFY_CLIENT_SECRET | CLient secret of your Spotify application                       | Yes      |
-| PORT                  | The port to use for the HTTP server that handles the OAuth flow | No       |
+| Env                   | Function                                                                                                                                 | Required |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| TRAKT_CLIENT_ID       | Client ID of your Trakt.tv application                                                                                                   | Yes      |
+| TRAKT_CLIENT_SECRET   | Client secret of your Trakt.tv application                                                                                               | Yes      |
+| SPOTIFY_CLIENT_ID     | CLient ID of your Spotify application                                                                                                    | Yes      |
+| SPOTIFY_CLIENT_SECRET | CLient secret of your Spotify application                                                                                                | Yes      |
+| PORT                  | The port to use for the HTTP server that handles the OAuth flow                                                                          | No       |
+| APP_URL               | The url to access the app. This is used for the OAuth flow to authenticate with Trakt.tv and Spotify. For example: http://localhost:3000 | No       |
 
 ### Set up Trakt.tv App
 
