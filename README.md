@@ -36,7 +36,7 @@ Create a docker-compose.yaml file.
 version: "3"
 services:
   app:
-    image: movie-soundtrack-spotify-sync
+    image: movie-soundtrack-spotify-sync:latest
     container_name: movie-soundtracks-spotify-sync
     build: ./
     restart: unless-stopped
