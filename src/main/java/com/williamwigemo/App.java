@@ -16,7 +16,7 @@ public class App {
 
         scheduler.scheduleAtFixedRate(() -> {
             logger.info("Starting syncAll job...");
-            soundtrackSync.syncAll();
+            soundtrackSync.syncNew();
             logger.info("syncAll finished");
         }, 0, 5, TimeUnit.MINUTES);
     }

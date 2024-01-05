@@ -11,6 +11,10 @@ public class TraktHistoryManager {
     private static final TraktHistoryManager TraktHistoryManager = new TraktHistoryManager();
     private static final Preferences Prefs = Preferences.userNodeForPackage(TraktHistoryManager.class);
 
+    private TraktHistoryManager() {
+
+    }
+
     public static TraktHistoryManager getInstance() {
         return TraktHistoryManager;
     }

@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import com.williamwigemo.entities.MediaEntity;
 import com.williamwigemo.entities.SpotifyTrackEntity;
@@ -16,18 +17,21 @@ import com.williamwigemo.spotify.SpotifyApiException;
 import com.williamwigemo.spotify.SpotifyPlaylistSync;
 import com.williamwigemo.trakt.TraktApi;
 import com.williamwigemo.trakt.TraktApiException;
-
-import me.tongfei.progressbar.ProgressBar;
+import com.williamwigemo.trakt.TraktHistoryManager;
 
 public class SoundtrackSync {
     private final SpotifyAPI spotifyAPI;
     private final TraktApi traktApi;
     private final MediaService mediaService;
+    private final TraktHistoryManager historyManager;
+    private final Logger logger;
 
     public SoundtrackSync() throws IOException {
         this.spotifyAPI = new SpotifyAPI();
         this.traktApi = new TraktApi();
         this.mediaService = new MediaService(this.spotifyAPI);
+        this.historyManager = TraktHistoryManager.getInstance();
+        this.logger = AppLogging.buildLogger(SoundtrackSync.class);
     }
 
     private Map<MediaEntity, Set<SpotifyTrackEntity>> loadSoundtracks(List<MediaEntity> history,
@@ -35,7 +39,7 @@ public class SoundtrackSync {
             throws IOException, SpotifyApiException {
 
         Map<MediaEntity, Set<SpotifyTrackEntity>> imdbIdToTracks = new HashMap<>();
-        for (MediaEntity entity : ProgressBar.wrap(history, "Fetching soundtracks...")) {
+        for (MediaEntity entity : history) {
             entity = this.mediaService.fetchMedia(entity);
             imdbIdToTracks.put(entity, entity.getSoundtracks());
         }
@@ -43,20 +47,20 @@ public class SoundtrackSync {
         return imdbIdToTracks;
     }
 
-    public void syncAll() {
+    public void syncFromDate(Date fromDate) {
         Date lastMovieSync = new Date();
 
         try {
             this.traktApi.authenticate();
         } catch (TraktApiException | IOException e) {
-            System.out.println("Failed to authenticate with Trakt.");
+            logger.severe("Failed to authenticate with Trakt.");
             e.printStackTrace();
             return;
         }
         try {
             this.spotifyAPI.authenticate();
         } catch (SpotifyApiException | IOException e) {
-            System.out.println("Failed to authenticate with Spotify.");
+            logger.severe("Failed to authenticate with Spotify.");
             e.printStackTrace();
             return;
         }
@@ -64,11 +68,16 @@ public class SoundtrackSync {
         // load watched movies
         List<MediaEntity> history = new ArrayList<>();
         try {
-            this.traktApi.getWatchedMovies().stream().map(o -> o.toEntity()).forEach(history::add);
-            this.traktApi.getShowsHistory().stream().map(o -> o.getShow().toEntity()).forEach(history::add);
+            history.addAll(this.traktApi.getWatchedMovies(fromDate).stream().map(o -> o.toEntity()).toList());
+            history.addAll(this.traktApi.getWatchedShows(fromDate).stream().map(o -> o.getShow().toEntity()).toList());
         } catch (TraktApiException e) {
-            System.out.println("Failed to load shows and movie history from Trakt.");
+            logger.severe("Failed to load shows and movie history from Trakt.");
             e.printStackTrace();
+            return;
+        }
+
+        if (history.isEmpty()) {
+            logger.info("No new movies or shows were found. Nothing to do.");
             return;
         }
 
@@ -79,7 +88,7 @@ public class SoundtrackSync {
         try {
             movieToTracksMap = loadSoundtracks(history, soundtrackNames);
         } catch (SpotifyApiException | IOException e) {
-            System.out.println("Failed to load soundtracks from Spotify.");
+            logger.severe("Failed to load soundtracks from Spotify.");
             e.printStackTrace();
             return;
         }
@@ -87,18 +96,32 @@ public class SoundtrackSync {
         // create/update spotify playlist
         SpotifyPlaylistSync playlistSync = new SpotifyPlaylistSync(spotifyAPI);
 
-        System.out.println("Populating playlist with new soundtracks...");
+        logger.info("Populating playlist with new soundtracks...");
         Set<SpotifyTrackEntity> tracksAdded;
         try {
             tracksAdded = playlistSync.updateMovies(movieToTracksMap);
         } catch (SpotifyApiException e) {
-            System.out.println("Failed adding soundtracks to Spotify playlist.");
+            logger.severe("Failed adding soundtracks to Spotify playlist.");
             e.printStackTrace();
             return;
         }
 
-        this.traktApi.setLastMovieSync(lastMovieSync);
+        this.historyManager.setLastMovieSync(lastMovieSync);
 
         SyncSummary.printSummary(history, movieToTracksMap, tracksAdded);
+    }
+
+    public void syncNew() {
+        Date fromDate = this.historyManager.getLastMovieSync();
+        if (fromDate != null) {
+            logger.info(String.format("Syncing... (Last sync: %s)", UrlUtils.getISO8601Date(fromDate)));
+        } else {
+            logger.info("Syncing... (Last sync: never)");
+        }
+        syncFromDate(fromDate);
+    }
+
+    public void syncAll() {
+        syncFromDate(null);
     }
 }

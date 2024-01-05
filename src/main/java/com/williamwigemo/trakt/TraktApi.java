@@ -25,7 +25,6 @@ public class TraktApi {
     private final HttpClient httpClient;
     private final TraktAuth traktAuth;
     private final AppSettings appCredentials;
-    private final TraktHistoryManager historyManager;
 
     public TraktApi() throws IOException {
         this.httpClient = HttpClient.newHttpClient();
@@ -33,7 +32,6 @@ public class TraktApi {
         this.traktAuth.setOAuthContexts(new TraktOAuthContexts(traktAuth));
 
         this.appCredentials = AppSettings.getSettings();
-        this.historyManager = TraktHistoryManager.getInstance();
     }
 
     public <T> HttpResponse<T> sendRequest(HttpRequest req, BodyHandler<T> bodyHandler)
@@ -53,32 +51,25 @@ public class TraktApi {
         this.traktAuth.authorize();
     }
 
-    public List<TraktMovie> syncMovieHistory() throws TraktApiException {
-        Date lastMovieSync = this.historyManager.getLastMovieSync();
-        List<TraktMovieHistoryResult> movies = getMovieHistory();
+    public enum MediaType {
+        MOVIES("movies"),
+        SHOWS("shows");
 
-        if (lastMovieSync != null) {
-            movies = movies.stream()
-                    .filter(o -> {
-                        try {
-                            return UrlUtils.parseISO8601Date(o.getLastUpdatedAt()).compareTo(lastMovieSync) > 0;
-                        } catch (ParseException e) {
-                            return false;
-                        }
-                    })
-                    .toList();
+        private String strValue;
+
+        MediaType(String strValue) {
+            this.strValue = strValue;
         }
 
-        return movies.stream().map(o -> o.getMovie()).toList();
+        @Override
+        public String toString() {
+            return this.strValue;
+        }
     }
 
-    public List<TraktMovieHistoryResult> getMovieHistory() throws TraktApiException {
-        return getHistory("movies", TraktMovieHistoryResult[].class);
-    }
-
-    public <T extends TraktWatchedResult<?>> List<T> getHistory(String type, Class<T[]> cls)
+    public <T extends TraktWatchedResult<?>> List<T> getHistory(MediaType type, Class<T[]> cls, Date fromDate)
             throws TraktApiException {
-        URI uri = URI.create(ApiBaseUrl + "/sync/watched/" + type);
+        URI uri = URI.create(ApiBaseUrl + "/sync/watched/" + type.toString());
 
         HttpRequest req = HttpRequest.newBuilder(uri)
                 .header("Content-Type", "application/json")
@@ -93,23 +84,34 @@ public class TraktApi {
             throw new TraktApiException(res);
         }
 
+        List<T> objs;
         try {
-            return Arrays.asList(UrlUtils.parseResponseBody(res.body(), cls));
+            objs = Arrays.asList(UrlUtils.parseResponseBody(res.body(), cls));
         } catch (IOException e) {
             throw new TraktApiException("Could not parse history: " + e.getMessage());
         }
 
+        if (fromDate != null) {
+            objs = objs.stream()
+                    .filter(o -> {
+                        try {
+                            return UrlUtils.parseISO8601Date(o.getLastUpdatedAt()).compareTo(fromDate) > 0;
+                        } catch (ParseException e) {
+                            return false;
+                        }
+                    })
+                    .toList();
+        }
+
+        return objs;
     }
 
-    public List<TraktWatchedShowsResult> getShowsHistory() throws TraktApiException {
-        return getHistory("shows", TraktWatchedShowsResult[].class);
+    public List<TraktWatchedShowsResult> getWatchedShows(Date fromDate) throws TraktApiException {
+        return getHistory(MediaType.SHOWS, TraktWatchedShowsResult[].class, fromDate);
     }
 
-    public List<TraktMovie> getWatchedMovies() throws TraktApiException {
-        return getMovieHistory().stream().map(o -> o.getMovie()).toList();
-    }
-
-    public void setLastMovieSync(Date lastMovieSync) {
-        this.historyManager.setLastMovieSync(lastMovieSync);
+    public List<TraktMovie> getWatchedMovies(Date fromDate) throws TraktApiException {
+        return getHistory(MediaType.MOVIES, TraktMovieHistoryResult[].class, fromDate).stream().map(o -> o.getMovie())
+                .toList();
     }
 }

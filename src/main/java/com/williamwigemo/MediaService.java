@@ -21,7 +21,7 @@ import jakarta.persistence.criteria.Root;
 
 public class MediaService {
 
-    private static final int MillisToNextSoundtrackFetch = 5 * 60 * 60 * 1000;
+    private static final int MsToNextSoundtrackFetch = 7 * 24 * 60 * 60 * 1000;
     private final ImdbSoundtrackFetcher soundtrackFetcher;
     private final SpotifyTracksService spotifyTracksService;
     private final Logger logger = AppLogging.buildLogger(MediaService.class);
@@ -97,7 +97,7 @@ public class MediaService {
     public boolean shouldFetchSoundtracks(MediaEntity entity) {
         if (entity == null)
             return true;
-        return System.currentTimeMillis() > entity.getLastFetchedSoundtracks() + MillisToNextSoundtrackFetch;
+        return System.currentTimeMillis() > entity.getLastFetchedSoundtracks() + MsToNextSoundtrackFetch;
     }
 
     public void getSoundtracks(MediaEntity media) throws IOException {
