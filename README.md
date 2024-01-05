@@ -2,12 +2,13 @@
 
 ### Environment variables
 
-| Env                 | Function                                                        | Required |
-| ------------------- | --------------------------------------------------------------- | -------- |
-| TRAKT_CLIENT_ID     | Client ID of your Trakt.tv application                          | Yes      |
-| TRAKT_CLIENT_SECRET | Client secret of your Trakt.tv application                      | Yes      |
-| SPOTIFY_CLIENT_ID   | CLient ID of your Spotify application                           | Yes      |
-| PORT                | The port to use for the HTTP server that handles the OAuth flow | No       |
+| Env                   | Function                                                        | Required |
+| --------------------- | --------------------------------------------------------------- | -------- |
+| TRAKT_CLIENT_ID       | Client ID of your Trakt.tv application                          | Yes      |
+| TRAKT_CLIENT_SECRET   | Client secret of your Trakt.tv application                      | Yes      |
+| SPOTIFY_CLIENT_ID     | CLient ID of your Spotify application                           | Yes      |
+| SPOTIFY_CLIENT_SECRET | CLient secret of your Spotify application                       | Yes      |
+| PORT                  | The port to use for the HTTP server that handles the OAuth flow | No       |
 
 ### Set up Trakt.tv App
 
@@ -45,9 +46,11 @@ services:
 
 ```
 
+Where `app.properties` specify the required environment variables.
+
 Run `docker compose build` to build the image, and `docker compose up` to start the container.
 
-Follow the instructions in the console to authenticate with Trakt and Spotify.
+When starting the container for the first time, follow the instructions in the console to authenticate with Trakt and Spotify.
 
 ## Decisions
 
