@@ -1,4 +1,4 @@
-package com.williamwigemo.spotify;
+package com.williamwigemo.spotify.dtos;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -2,18 +2,24 @@ package com.williamwigemo.spotify;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URI;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import com.williamwigemo.UrlUtils;
 
 public class SpotifyRedirectHandler implements HttpHandler {
+    private SpotifyAuth spotifyAuth;
+
+    public SpotifyRedirectHandler(SpotifyAuth spotifyAuth) {
+        this.spotifyAuth = spotifyAuth;
+    }
+
     @Override
     public void handle(HttpExchange httpExchange) throws IOException {
         OutputStream out = httpExchange.getResponseBody();
 
-        httpExchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
-
-        String script = """
+        String bodyRes = """
                 <!doctype html>
                 <html lang="en">
                 <head>
@@ -21,18 +27,19 @@ public class SpotifyRedirectHandler implements HttpHandler {
                 </head>
                 <body></body>
                 <script type="text/javascript">
-                    var fragment = window.location.hash.substring(1);
-                    var xhr = new XMLHttpRequest();
-                    xhr.open('POST', '/authenticate');
-                    xhr.setRequestHeader("Content-Type", "application/json");
-                    xhr.send(JSON.stringify({
-                        fragment: fragment
-                    }));
+                    window.close();
                 </script>
                 </html>
                 """;
-        httpExchange.sendResponseHeaders(200, script.length());
-        out.write(script.getBytes());
+
+        URI uri = httpExchange.getRequestURI();
+        String code = UrlUtils.queryToMap(uri.getQuery()).get("code");
+        assert code != null;
+
+        httpExchange.sendResponseHeaders(200, bodyRes.length());
+        out.write(bodyRes.getBytes());
         httpExchange.close();
+
+        this.spotifyAuth.setCode(code);
     }
 }

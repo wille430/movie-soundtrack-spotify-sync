@@ -1,4 +1,4 @@
-package com.williamwigemo.trakt;
+package com.williamwigemo;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -6,14 +6,13 @@ import java.net.URI;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-import com.williamwigemo.UrlUtils;
 
-public class TraktRedirectHandler implements HttpHandler {
+public class OAuthRedirectHandler implements HttpHandler {
 
-    private final TraktAuth traktAuth;
+    private final OAuthHandler<?> oAuthHandler;
 
-    public TraktRedirectHandler(TraktAuth traktAuth) {
-        this.traktAuth = traktAuth;
+    public OAuthRedirectHandler(OAuthHandler<?> oAuthHandler) {
+        this.oAuthHandler = oAuthHandler;
     }
 
     @Override
@@ -41,7 +40,6 @@ public class TraktRedirectHandler implements HttpHandler {
         out.write(bodyRes.getBytes());
         httpExchange.close();
 
-        this.traktAuth.setCode(code);
+        this.oAuthHandler.setCode(code);
     }
-
 }

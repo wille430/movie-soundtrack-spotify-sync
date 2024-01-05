@@ -9,6 +9,7 @@ public class AppSettings {
     private static final String TRAKT_CLIENT_ID = "TRAKT_CLIENT_ID";
     private static final String TRAKT_CLIENT_SECRET = "TRAKT_CLIENT_SECRET";
     private static final String SPOTIFY_CLIENT_ID = "SPOTIFY_CLIENT_ID";
+    private static final String SPOTIFY_CLIENT_SECRET = "SPOTIFY_CLIENT_SECRET";
     private static final String PORT = "PORT";
 
     private static final int DefaultPort = 3000;
@@ -18,6 +19,7 @@ public class AppSettings {
     public String traktClientId;
     public String traktClientSecret;
     public String spotifyClientId;
+    public String spotifyClientSecret;
     public Integer port;
 
     private static final Logger logger = AppLogging.buildLogger(AppSettings.class);
@@ -38,6 +40,7 @@ public class AppSettings {
         this.traktClientId = properties.getProperty(TRAKT_CLIENT_ID);
         this.traktClientSecret = properties.getProperty(TRAKT_CLIENT_SECRET);
         this.spotifyClientId = properties.getProperty(SPOTIFY_CLIENT_ID);
+        this.spotifyClientSecret = properties.getProperty(SPOTIFY_CLIENT_SECRET);
 
         if (properties.getProperty(PORT) != null)
             this.setPort(properties.getProperty(PORT));
@@ -52,6 +55,9 @@ public class AppSettings {
 
         if (System.getenv(SPOTIFY_CLIENT_ID) != null)
             this.spotifyClientId = System.getenv(SPOTIFY_CLIENT_ID);
+
+        if (System.getenv(SPOTIFY_CLIENT_SECRET) != null)
+            this.spotifyClientSecret = System.getenv(SPOTIFY_CLIENT_SECRET);
 
         if (System.getenv(PORT) != null)
             this.setPort(System.getenv(PORT));
@@ -72,6 +78,9 @@ public class AppSettings {
 
         if (this.spotifyClientId == null)
             throwMissingProperty(SPOTIFY_CLIENT_ID);
+
+        if (this.spotifyClientSecret == null)
+            throwMissingProperty(SPOTIFY_CLIENT_SECRET);
     }
 
     private void assignDefaults() {
@@ -117,5 +126,9 @@ public class AppSettings {
 
     public Integer getPort() {
         return port;
+    }
+
+    public String getSpotifyClientSecret() {
+        return spotifyClientSecret;
     }
 }

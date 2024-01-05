@@ -14,8 +14,6 @@ public class App {
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
         SoundtrackSync soundtrackSync = new SoundtrackSync();
 
-        soundtrackSync.syncAll();
-
         scheduler.scheduleAtFixedRate(() -> {
             logger.info("Starting syncAll job...");
             soundtrackSync.syncAll();

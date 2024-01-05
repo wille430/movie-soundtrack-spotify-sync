@@ -11,11 +11,13 @@ import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 
 import com.williamwigemo.AppSettings;
-import com.williamwigemo.OAuthHttpServer;
 import com.williamwigemo.UrlUtils;
+import com.williamwigemo.trakt.dtos.TraktMovie;
+import com.williamwigemo.trakt.dtos.TraktMovieHistoryResult;
+import com.williamwigemo.trakt.dtos.TraktWatchedResult;
+import com.williamwigemo.trakt.dtos.TraktWatchedShowsResult;
 
 public class TraktApi {
 
@@ -28,6 +30,8 @@ public class TraktApi {
     public TraktApi() throws IOException {
         this.httpClient = HttpClient.newHttpClient();
         this.traktAuth = new TraktAuth(this);
+        this.traktAuth.setOAuthContexts(new TraktOAuthContexts(traktAuth));
+
         this.appCredentials = AppSettings.getSettings();
         this.historyManager = TraktHistoryManager.getInstance();
     }
@@ -41,26 +45,12 @@ public class TraktApi {
         }
     }
 
+    public TraktAuth getTraktAuth() {
+        return traktAuth;
+    }
+
     public void authenticate() throws TraktApiException, IOException {
-        if (this.traktAuth.isAuthenticated()) {
-            return;
-        }
-
-        this.traktAuth.setCodeLatch(new CountDownLatch(1));
-
-        OAuthHttpServer httpServer = OAuthHttpServer.getInstance();
-        httpServer.start(new TraktOAuthContexts(this.traktAuth));
-
-        System.out.println("Authenticate to Trak.tv by following this link: " + this.traktAuth.getAuthLink());
-
-        try {
-            this.traktAuth.fetchAccessToken();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            return;
-        }
-
-        httpServer.stop();
+        this.traktAuth.authorize();
     }
 
     public List<TraktMovie> syncMovieHistory() throws TraktApiException {

@@ -4,8 +4,8 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
-import com.williamwigemo.spotify.SpotifyArtist;
-import com.williamwigemo.spotify.SpotifyTrack;
+import com.williamwigemo.spotify.dtos.SpotifyArtist;
+import com.williamwigemo.spotify.dtos.SpotifyTrack;
 
 public class TrackSimilarityTest {
     @Test

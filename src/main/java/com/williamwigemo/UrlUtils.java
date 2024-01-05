@@ -12,6 +12,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -64,5 +65,9 @@ public class UrlUtils {
         return params.keySet().stream()
                 .map(key -> key + "=" + URLEncoder.encode(params.get(key), StandardCharsets.UTF_8))
                 .collect(Collectors.joining("&"));
+    }
+
+    public static String getRandomString(int i) {
+        return UUID.randomUUID().toString().substring(0, 16);
     }
 }

@@ -19,8 +19,7 @@ public class SpotifyOAuthContexts implements OAuthContexts {
     public Map<String, HttpHandler> getContexts() {
         if (this.contexts == null) {
             this.contexts = new HashMap<>();
-            this.contexts.put("/spotify/redirect", new SpotifyRedirectHandler());
-            this.contexts.put("/authenticate", new SpotifyAuthenticateHandler(spotifyAuth));
+            this.contexts.put("/spotify/redirect", new SpotifyRedirectHandler(spotifyAuth));
         }
 
         return this.contexts;

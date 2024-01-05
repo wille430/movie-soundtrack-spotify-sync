@@ -1,9 +1,9 @@
-package com.williamwigemo.trakt;
+package com.williamwigemo.trakt.dtos;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.williamwigemo.entities.MediaEntity;
-import com.williamwigemo.trakt.TraktMovie.TraktMovieIds;
+import com.williamwigemo.trakt.dtos.TraktMovie.TraktMovieIds;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TraktShow {

@@ -9,7 +9,7 @@ import com.williamwigemo.UrlUtils;
 public class TraktHistoryManager {
     private static final String LAST_MOVIE_SYNC_KEY = "last_movie_sync";
     private static final TraktHistoryManager TraktHistoryManager = new TraktHistoryManager();
-    private static final Preferences Prefs = Preferences.userNodeForPackage(TraktAccessTokenManager.class);
+    private static final Preferences Prefs = Preferences.userNodeForPackage(TraktHistoryManager.class);
 
     public static TraktHistoryManager getInstance() {
         return TraktHistoryManager;

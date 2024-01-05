@@ -12,6 +12,7 @@ import com.williamwigemo.AppLogging;
 import com.williamwigemo.HibernateUtil;
 import com.williamwigemo.ImdbSoundtrackResult.Collaborators;
 import com.williamwigemo.entities.SpotifyTrackEntity;
+import com.williamwigemo.spotify.dtos.SpotifyTrack;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;

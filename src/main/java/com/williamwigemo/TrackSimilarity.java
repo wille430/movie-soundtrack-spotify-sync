@@ -1,6 +1,6 @@
 package com.williamwigemo;
 
-import com.williamwigemo.spotify.SpotifyTrack;
+import com.williamwigemo.spotify.dtos.SpotifyTrack;
 
 public class TrackSimilarity {
     public static boolean isSameTrack(SpotifyTrack track, String trackName, String artist) {

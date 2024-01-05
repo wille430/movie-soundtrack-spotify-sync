@@ -22,12 +22,10 @@ import me.tongfei.progressbar.ProgressBar;
 public class SoundtrackSync {
     private final SpotifyAPI spotifyAPI;
     private final TraktApi traktApi;
-    private final AppSettings appCredentials;
     private final MediaService mediaService;
 
     public SoundtrackSync() throws IOException {
-        this.appCredentials = AppSettings.getSettings();
-        this.spotifyAPI = new SpotifyAPI(this.appCredentials.getSpotifyClientId());
+        this.spotifyAPI = new SpotifyAPI();
         this.traktApi = new TraktApi();
         this.mediaService = new MediaService(this.spotifyAPI);
     }
@@ -53,12 +51,14 @@ public class SoundtrackSync {
         } catch (TraktApiException | IOException e) {
             System.out.println("Failed to authenticate with Trakt.");
             e.printStackTrace();
+            return;
         }
         try {
             this.spotifyAPI.authenticate();
-        } catch (IOException e) {
+        } catch (SpotifyApiException | IOException e) {
             System.out.println("Failed to authenticate with Spotify.");
             e.printStackTrace();
+            return;
         }
 
         // load watched movies

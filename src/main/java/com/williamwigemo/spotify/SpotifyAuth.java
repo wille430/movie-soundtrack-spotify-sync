@@ -1,43 +1,90 @@
 package com.williamwigemo.spotify;
 
-import java.util.concurrent.CountDownLatch;
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.List;
 
-public class SpotifyAuth {
+import com.williamwigemo.AppLogging;
+import com.williamwigemo.AppSettings;
+import com.williamwigemo.OAuthCredentialsResponse;
+import com.williamwigemo.OAuthHandler;
+import com.williamwigemo.OAuthHttpServer;
+import com.williamwigemo.UrlUtils;
+import com.williamwigemo.spotify.dtos.SpotifyOAuthTokenResponse;
 
-    private String accessToken = null;
-    private CountDownLatch accessTokenLatch;
+public class SpotifyAuth extends OAuthHandler<SpotifyApiException> {
 
-    public SpotifyAuth() {
-        this.accessTokenLatch = new CountDownLatch(1);
+    private static final String AccountBaseUrl = "https://accounts.spotify.com";
+    private static final String RedirectUrl = OAuthHttpServer.getBaseUrl() + "/spotify/redirect";
+
+    private SpotifyAPI spotifyAPI;
+
+    public SpotifyAuth(SpotifyAPI spotifyAPI) throws IOException {
+        super("Spotify", AppLogging.buildLogger(SpotifyAuth.class), SpotifyAuth.class);
+        this.setOAuthContexts(new SpotifyOAuthContexts(this));
+        this.spotifyAPI = spotifyAPI;
     }
 
-    public void setAccessTokenLatch(CountDownLatch accessTokenLatch) {
-        this.accessTokenLatch = accessTokenLatch;
-    }
+    public OAuthCredentialsResponse fetchAccessTokenFromCode() throws SpotifyApiException {
+        URI uri = URI.create(AccountBaseUrl + "/api/token");
 
-    public String getAccessToken() {
-        if (this.accessToken == null) {
-            this.accessToken = SpotifyAccessTokenManager.getAccessToken();
+        AppSettings creds = AppSettings.getSettings();
+
+        HashMap<String, String> parameters = new HashMap<>();
+        parameters.put("code", this.getCode());
+        parameters.put("redirect_uri", RedirectUrl);
+        parameters.put("grant_type", "authorization_code");
+        String formData = UrlUtils.getQueryString(parameters);
+
+        String authStr = "Basic " + Base64
+                .getEncoder()
+                .withoutPadding()
+                .encodeToString(String.format("%s:%s", creds.getSpotifyClientId(),
+                        creds.getSpotifyClientSecret()).getBytes());
+
+        HttpRequest req = HttpRequest.newBuilder(uri)
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .header("Authorization", authStr)
+                .POST(BodyPublishers.ofString(formData)).build();
+
+        HttpResponse<String> res = this.spotifyAPI.sendRequest(req,
+                BodyHandlers.ofString());
+
+        String responseBody = res.body();
+        if (res.statusCode() != 200) {
+            throw new SpotifyApiException(res);
         }
 
-        if (SpotifyAccessTokenManager.hasValidAccessToken()) {
-            return this.accessToken;
+        try {
+            SpotifyOAuthTokenResponse oauthRes = UrlUtils.parseResponseBody(responseBody,
+                    SpotifyOAuthTokenResponse.class);
+
+            return oauthRes;
+        } catch (IOException e) {
+            throw new SpotifyApiException("Could not parse content: " + e.getMessage());
         }
-
-        return this.accessToken;
     }
 
-    public void setAccessToken(SpotifyTokenResponse res) {
-        SpotifyAccessTokenManager.saveOAuthToken(res);
-        this.accessToken = res.accessToken;
-        this.accessTokenLatch.countDown();
-    }
+    public String createAuthorizeUrl() {
+        AppSettings settings = AppSettings.getSettings();
 
-    public boolean isAuthenticated() {
-        return this.getAccessToken() != null && SpotifyAccessTokenManager.hasValidAccessToken();
-    }
+        List<String> scopes = Arrays.asList("playlist-read-private", "user-read-private", "playlist-modify-private");
+        HashMap<String, String> parameters = new HashMap<>();
+        parameters.put("client_id", settings.getSpotifyClientId());
+        parameters.put("response_type", "code");
+        parameters.put("redirect_uri", RedirectUrl);
+        parameters.put("scope", (String.join(" ", scopes)));
+        String form = UrlUtils.getQueryString(parameters);
 
-    public CountDownLatch getAccessTokenLatch() {
-        return this.accessTokenLatch;
+        URI uri = URI.create(AccountBaseUrl + "/authorize?" + form);
+
+        return uri.toString();
     }
 }

@@ -1,4 +1,4 @@
-package com.williamwigemo.spotify;
+package com.williamwigemo.spotify.dtos;
 
 import java.util.List;
 
@@ -18,10 +18,4 @@ public class SpotifyGetPlaylistsResponse extends SpotifyResult<SpotifyPlaylist> 
             @JsonProperty("items") List<SpotifyPlaylist> items) {
         super(href, limit, next, offset, previous, total, items);
     }
-    // public List<SpotifyPlaylist> items;
-
-    // public SpotifyGetPlaylistsResponse(
-    // @JsonProperty("items") List<SpotifyAddPlaylistResponse> items) {
-    // this.items = items.stream().map(o -> (SpotifyPlaylist) o).toList();
-    // }
 }

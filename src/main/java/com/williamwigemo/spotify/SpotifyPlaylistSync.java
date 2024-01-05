@@ -12,6 +12,8 @@ import com.williamwigemo.Deduplicator;
 import com.williamwigemo.entities.MediaEntity;
 import com.williamwigemo.entities.PlaylistEntity;
 import com.williamwigemo.entities.SpotifyTrackEntity;
+import com.williamwigemo.spotify.dtos.SpotifyGetPlaylistTracksResponse;
+import com.williamwigemo.spotify.dtos.SpotifyPlaylist;
 
 public class SpotifyPlaylistSync {
 

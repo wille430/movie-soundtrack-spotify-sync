@@ -5,6 +5,7 @@ import java.util.Map;
 
 import com.sun.net.httpserver.HttpHandler;
 import com.williamwigemo.OAuthContexts;
+import com.williamwigemo.OAuthRedirectHandler;
 
 public class TraktOAuthContexts implements OAuthContexts {
     private final TraktAuth traktAuth;
@@ -18,7 +19,7 @@ public class TraktOAuthContexts implements OAuthContexts {
     private Map<String, HttpHandler> createHttpContexts() {
         Map<String, HttpHandler> map = new HashMap<>();
 
-        map.put("/trakt/redirect", new TraktRedirectHandler(this.traktAuth));
+        map.put("/trakt/redirect", new OAuthRedirectHandler(this.traktAuth));
 
         return map;
     }

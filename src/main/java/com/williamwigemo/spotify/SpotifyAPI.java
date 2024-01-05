@@ -8,20 +8,24 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CountDownLatch;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.williamwigemo.JsonBodyHandler;
-import com.williamwigemo.OAuthHttpServer;
 import com.williamwigemo.TrackSimilarity;
 import com.williamwigemo.UrlUtils;
+import com.williamwigemo.spotify.dtos.SpotifyAddPlaylistResponse;
+import com.williamwigemo.spotify.dtos.SpotifyCurrentUser;
+import com.williamwigemo.spotify.dtos.SpotifyGetPlaylistTracksResponse;
+import com.williamwigemo.spotify.dtos.SpotifyGetPlaylistsResponse;
+import com.williamwigemo.spotify.dtos.SpotifyPlaylist;
+import com.williamwigemo.spotify.dtos.SpotifySearchResponse;
+import com.williamwigemo.spotify.dtos.SpotifyTrack;
 
 public class SpotifyAPI {
 
@@ -29,23 +33,25 @@ public class SpotifyAPI {
     private HttpClient httpClient;
     private SpotifyCurrentUser currentUser = null;
     private final ObjectMapper objectMapper;
-    private String clientId;
     private SpotifyAuth spotifyAuth;
 
-    public SpotifyAPI(String clientId) throws IOException {
-        this.clientId = clientId;
+    public SpotifyAPI() throws IOException {
         this.httpClient = HttpClient.newHttpClient();
         this.objectMapper = new ObjectMapper();
-        this.spotifyAuth = new SpotifyAuth();
+        this.spotifyAuth = new SpotifyAuth(this);
     }
 
-    private <T> HttpResponse<T> sendRequest(HttpRequest req, BodyHandler<T> bodyHandler)
+    public <T> HttpResponse<T> sendRequest(HttpRequest req, BodyHandler<T> bodyHandler)
             throws SpotifyApiException {
         try {
             return this.httpClient.send(req, bodyHandler);
         } catch (IOException | InterruptedException e) {
             throw new SpotifyApiException(e.getMessage());
         }
+    }
+
+    public SpotifyAuth getSpotifyAuth() {
+        return spotifyAuth;
     }
 
     public SpotifyCurrentUser getCurrentUser() throws SpotifyApiException {
@@ -66,36 +72,8 @@ public class SpotifyAPI {
         return this.currentUser;
     }
 
-    public void authenticate() throws IOException {
-        if (this.spotifyAuth.isAuthenticated()) {
-            return;
-        }
-
-        this.spotifyAuth.setAccessTokenLatch(new CountDownLatch(1));
-
-        OAuthHttpServer httpServer = OAuthHttpServer.getInstance();
-        httpServer.start(new SpotifyOAuthContexts(this.spotifyAuth));
-
-        List<String> scopes = Arrays.asList("playlist-read-private", "user-read-private", "playlist-modify-private");
-        HashMap<String, String> parameters = new HashMap<>();
-        parameters.put("client_id", this.clientId);
-        parameters.put("response_type", "token");
-        parameters.put("redirect_uri", OAuthHttpServer.getBaseUrl() + "/spotify/redirect");
-        parameters.put("scope", (String.join(" ", scopes)));
-        String form = UrlUtils.getQueryString(parameters);
-
-        URI uri = URI.create("https://accounts.spotify.com/authorize?" + form);
-
-        System.out.println("Authenticate by following this link: " + uri.toString());
-
-        try {
-            this.spotifyAuth.getAccessTokenLatch().await();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            return;
-        } finally {
-            httpServer.stop();
-        }
+    public void authenticate() throws IOException, SpotifyApiException {
+        this.spotifyAuth.authorize();
     }
 
     public Optional<SpotifyTrack> getTrackByName(String trackName) throws SpotifyApiException {

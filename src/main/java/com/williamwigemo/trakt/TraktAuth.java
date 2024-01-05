@@ -7,70 +7,40 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.HashMap;
-import java.util.concurrent.CountDownLatch;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.williamwigemo.AppLogging;
 import com.williamwigemo.AppSettings;
+import com.williamwigemo.OAuthCredentialsResponse;
+import com.williamwigemo.OAuthHandler;
 import com.williamwigemo.OAuthHttpServer;
 import com.williamwigemo.UrlUtils;
+import com.williamwigemo.trakt.dtos.TraktOAuthTokenResponse;
 
-public class TraktAuth {
+public class TraktAuth extends OAuthHandler<TraktApiException> {
     private static final String RedirectUri = OAuthHttpServer.getBaseUrl() + "/trakt/redirect";
-
-    private String accessToken = null;
-    private String code = null;
-    private CountDownLatch codeLatch;
 
     private final TraktApi traktApi;
 
     public TraktAuth(TraktApi traktApi) {
+        super("Trakt.tv", AppLogging.buildLogger(TraktAuth.class), TraktAuth.class);
         this.traktApi = traktApi;
-        this.codeLatch = new CountDownLatch(1);
     }
 
-    public String getAuthLink() {
+    @Override
+    public String createAuthorizeUrl() {
         return String.format("https://trakt.tv/oauth/authorize?client_id=%s&redirect_uri=%s&response_type=code",
                 AppSettings.getSettings().getTraktClientId(), RedirectUri);
     }
 
-    public void setAccessToken(String accessToken) {
-        this.accessToken = accessToken;
-    }
-
-    public String getAccessToken() {
-        if (this.accessToken != null) {
-            return this.accessToken;
-        }
-
-        String accessToken = this.accessToken = TraktAccessTokenManager.getAccessToken();
-
-        long unixTime = System.currentTimeMillis() / 1000L;
-
-        if (unixTime < TraktAccessTokenManager.getCreatedAt() + TraktAccessTokenManager.getExpiresIn()) {
-            this.accessToken = accessToken;
-        } else if (accessToken != null) {
-            // TODO: refresh token
-        }
-
-        return this.accessToken;
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
-        this.codeLatch.countDown();
-    }
-
-    public String getAccessTokenFromCode(String code) throws TraktApiException {
+    @Override
+    public OAuthCredentialsResponse fetchAccessTokenFromCode() throws TraktApiException {
         URI uri = URI.create(TraktApi.ApiBaseUrl + "/oauth/token");
 
         AppSettings creds = AppSettings.getSettings();
 
         HashMap<String, String> parameters = new HashMap<>();
-        parameters.put("code", code);
+        parameters.put("code", this.getCode());
         parameters.put("client_id", creds.traktClientId);
         parameters.put("client_secret", creds.traktClientSecret);
         parameters.put("redirect_uri", RedirectUri);
@@ -96,26 +66,9 @@ public class TraktAuth {
         }
 
         try {
-            TraktOAuthTokenResponse oauthRes = UrlUtils.parseResponseBody(responseBody, TraktOAuthTokenResponse.class);
-
-            TraktAccessTokenManager.saveOAuthToken(oauthRes);
-
-            return oauthRes.accessToken;
+            return UrlUtils.parseResponseBody(responseBody, TraktOAuthTokenResponse.class);
         } catch (IOException e) {
             throw new TraktApiException("Could not parse content: " + e.getMessage());
         }
-    }
-
-    public void fetchAccessToken() throws InterruptedException, TraktApiException {
-        this.codeLatch.await();
-        this.accessToken = this.getAccessTokenFromCode(this.code);
-    }
-
-    public void setCodeLatch(CountDownLatch codeLatch) {
-        this.codeLatch = codeLatch;
-    }
-
-    public boolean isAuthenticated() {
-        return this.getAccessToken() != null;
     }
 }
