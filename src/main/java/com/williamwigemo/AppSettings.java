@@ -15,7 +15,7 @@ public class AppSettings {
     private static final String PORT = "PORT";
     private static final String APP_URL = "APP_URL";
 
-    private static final int DefaultPort = 300;
+    private static final int DefaultPort = 3000;
     private static final String DefaultHostname = "localhost";
 
     private static AppSettings appCredentials;
