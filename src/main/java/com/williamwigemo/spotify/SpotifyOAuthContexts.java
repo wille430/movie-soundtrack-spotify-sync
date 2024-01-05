@@ -6,6 +6,7 @@ import java.util.Map;
 
 import com.sun.net.httpserver.HttpHandler;
 import com.williamwigemo.OAuthContexts;
+import com.williamwigemo.OAuthRedirectHandler;
 
 public class SpotifyOAuthContexts implements OAuthContexts {
     private final SpotifyAuth spotifyAuth;
@@ -19,7 +20,7 @@ public class SpotifyOAuthContexts implements OAuthContexts {
     public Map<String, HttpHandler> getContexts() {
         if (this.contexts == null) {
             this.contexts = new HashMap<>();
-            this.contexts.put("/spotify/redirect", new SpotifyRedirectHandler(spotifyAuth));
+            this.contexts.put("/spotify/redirect", new OAuthRedirectHandler(spotifyAuth));
         }
 
         return this.contexts;
