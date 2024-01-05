@@ -38,7 +38,6 @@ services:
   app:
     image: movie-soundtrack-spotify-sync:latest
     container_name: movie-soundtracks-spotify-sync
-    build: ./
     restart: unless-stopped
     env_file: ./app.properties
     ports:
