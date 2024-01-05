@@ -32,15 +32,10 @@ public class SpotifyAuth extends OAuthHandler<SpotifyApiException> {
         this.spotifyAPI = spotifyAPI;
     }
 
-    public OAuthCredentialsResponse fetchAccessTokenFromCode() throws SpotifyApiException {
+    private OAuthCredentialsResponse sendTokenRequest(HashMap<String, String> parameters) throws SpotifyApiException {
         URI uri = URI.create(AccountBaseUrl + "/api/token");
 
         AppSettings creds = AppSettings.getSettings();
-
-        HashMap<String, String> parameters = new HashMap<>();
-        parameters.put("code", this.getCode());
-        parameters.put("redirect_uri", RedirectUrl);
-        parameters.put("grant_type", "authorization_code");
         String formData = UrlUtils.getQueryString(parameters);
 
         String authStr = "Basic " + Base64
@@ -72,6 +67,15 @@ public class SpotifyAuth extends OAuthHandler<SpotifyApiException> {
         }
     }
 
+    public OAuthCredentialsResponse fetchAccessTokenFromCode() throws SpotifyApiException {
+        HashMap<String, String> parameters = new HashMap<>();
+        parameters.put("code", this.getCode());
+        parameters.put("redirect_uri", RedirectUrl);
+        parameters.put("grant_type", "authorization_code");
+
+        return sendTokenRequest(parameters);
+    }
+
     public String createAuthorizeUrl() {
         AppSettings settings = AppSettings.getSettings();
 
@@ -86,5 +90,14 @@ public class SpotifyAuth extends OAuthHandler<SpotifyApiException> {
         URI uri = URI.create(AccountBaseUrl + "/authorize?" + form);
 
         return uri.toString();
+    }
+
+    @Override
+    public OAuthCredentialsResponse getRefreshedAccessToken() throws SpotifyApiException {
+        HashMap<String, String> parameters = new HashMap<>();
+        parameters.put("grant_type", "refresh_token");
+        parameters.put("refresh_token", this.getCredentialsManager().getRefreshToken());
+
+        return sendTokenRequest(parameters);
     }
 }

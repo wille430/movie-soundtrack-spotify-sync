@@ -29,12 +29,15 @@ public abstract class OAuthHandler<T extends Throwable> {
 
     private String accessToken = null;
 
-    public String getAccessToken() {
+    public String getAccessToken() throws T {
+        if (!this.credentialsManager.hasValidAccessToken() && this.credentialsManager.getRefreshToken() != null) {
+            this.logger.fine(String.format("%s access token has expired. Refreshing access token with refresh token",
+                    this.serviceName));
 
-        if (!this.credentialsManager.hasValidAccessToken()) {
-            // TODO: refresh access token
+            this.credentialsManager.saveOAuthCredentials(this.getRefreshedAccessToken());
+            this.accessToken = this.credentialsManager.getAccessToken();
         } else if (accessToken == null) {
-            accessToken = this.credentialsManager.getAccessToken();
+            this.accessToken = this.credentialsManager.getAccessToken();
         }
 
         return accessToken;
@@ -42,6 +45,10 @@ public abstract class OAuthHandler<T extends Throwable> {
 
     public void setOAuthContexts(OAuthContexts oAuthContexts) {
         this.oAuthContexts = oAuthContexts;
+    }
+
+    public OAuthCredentialsManager getCredentialsManager() {
+        return credentialsManager;
     }
 
     public String getCode() {
@@ -65,11 +72,19 @@ public abstract class OAuthHandler<T extends Throwable> {
 
     public abstract OAuthCredentialsResponse fetchAccessTokenFromCode() throws T;
 
-    public void authorize() throws T, IOException {
+    public abstract OAuthCredentialsResponse getRefreshedAccessToken() throws T;
 
+    public void authorize() throws T, IOException {
         if (this.credentialsManager.hasValidAccessToken()) {
             this.logger.info(String.format("%s is already authorized", this.getClass().getSimpleName()));
             return;
+        } else if (this.credentialsManager.getRefreshToken() != null) {
+            try {
+                this.credentialsManager.saveOAuthCredentials(this.getRefreshedAccessToken());
+                return;
+            } catch (Exception e) {
+                this.logger.warning(String.format("Failed to refresh access token for %s", this.serviceName));
+            }
         }
 
         this.setCodeLatch(new CountDownLatch(1));

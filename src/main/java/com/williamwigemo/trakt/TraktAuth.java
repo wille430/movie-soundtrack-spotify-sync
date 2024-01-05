@@ -33,18 +33,9 @@ public class TraktAuth extends OAuthHandler<TraktApiException> {
                 AppSettings.getSettings().getTraktClientId(), RedirectUri);
     }
 
-    @Override
-    public OAuthCredentialsResponse fetchAccessTokenFromCode() throws TraktApiException {
+    private OAuthCredentialsResponse sendTokenRequest(HashMap<String, String> parameters) throws TraktApiException {
         URI uri = URI.create(TraktApi.ApiBaseUrl + "/oauth/token");
 
-        AppSettings creds = AppSettings.getSettings();
-
-        HashMap<String, String> parameters = new HashMap<>();
-        parameters.put("code", this.getCode());
-        parameters.put("client_id", creds.traktClientId);
-        parameters.put("client_secret", creds.traktClientSecret);
-        parameters.put("redirect_uri", RedirectUri);
-        parameters.put("grant_type", "authorization_code");
         String jsonData;
         try {
             jsonData = UrlUtils.hashMapToString(parameters);
@@ -70,5 +61,34 @@ public class TraktAuth extends OAuthHandler<TraktApiException> {
         } catch (IOException e) {
             throw new TraktApiException("Could not parse content: " + e.getMessage());
         }
+
+    }
+
+    @Override
+    public OAuthCredentialsResponse fetchAccessTokenFromCode() throws TraktApiException {
+        AppSettings creds = AppSettings.getSettings();
+        HashMap<String, String> parameters = new HashMap<>();
+
+        parameters.put("code", this.getCode());
+        parameters.put("client_id", creds.traktClientId);
+        parameters.put("client_secret", creds.traktClientSecret);
+        parameters.put("redirect_uri", RedirectUri);
+        parameters.put("grant_type", "authorization_code");
+
+        return sendTokenRequest(parameters);
+    }
+
+    @Override
+    public OAuthCredentialsResponse getRefreshedAccessToken() throws TraktApiException {
+        AppSettings creds = AppSettings.getSettings();
+        HashMap<String, String> parameters = new HashMap<>();
+
+        parameters.put("refresh_token", this.getCredentialsManager().getRefreshToken());
+        parameters.put("client_id", creds.getTraktClientId());
+        parameters.put("client_secret", creds.getTraktClientSecret());
+        parameters.put("redirect_uri", RedirectUri);
+        parameters.put("grant_type", "refresh_token");
+
+        return sendTokenRequest(parameters);
     }
 }
