@@ -45,12 +45,16 @@ services:
     container_name: movie-soundtracks-spotify-sync
     restart: unless-stopped
     env_file: ./app.properties
+    volumes:
+        - ./data:/etc/msss
     ports:
       - 3000:3000
 
 ```
 
 Where `app.properties` specify the required environment variables.
+
+`/etc/msss` is where application data is saved. Mount a local directory to this file path to allow for consistent data between container creations.
 
 Run `docker compose build` to build the image, and `docker compose up` to start the container.
 
