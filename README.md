@@ -1,3 +1,7 @@
+# movie-soundtrack-spotify-sync
+
+Syncs watched movies and shows from Trakt.tv and adds their corresponding soundtracks to a Spotify playlist.
+
 ## Usage
 
 ### Environment variables
