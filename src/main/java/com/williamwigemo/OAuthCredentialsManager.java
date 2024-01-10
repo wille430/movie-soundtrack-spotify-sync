@@ -1,18 +1,15 @@
 package com.williamwigemo;
 
-import java.util.prefs.BackingStoreException;
-import java.util.prefs.Preferences;
-
 public class OAuthCredentialsManager {
     private static final String ACCESS_TOKEN_KEY = "access_token";
     private static final String EXPIRES_IN_KEY = "expires_in";
     private static final String CREATED_AT_KEY = "create_at";
     private static final String REFRESH_TOKEN = "refresh_token";
 
-    private final Preferences prefs;
+    private final AppProperties prefs;
 
     public <T> OAuthCredentialsManager(Class<T> cls) {
-        prefs = Preferences.userNodeForPackage(cls);
+        this.prefs = AppProperties.getProperties(cls);
     }
 
     public void saveOAuthCredentials(OAuthCredentialsResponse obj) {
@@ -22,6 +19,8 @@ public class OAuthCredentialsManager {
 
         if (obj.getRefreshToken() != null)
             prefs.put(REFRESH_TOKEN, obj.getRefreshToken());
+
+        prefs.store();
     }
 
     public String getAccessToken() {
@@ -39,16 +38,12 @@ public class OAuthCredentialsManager {
     }
 
     public boolean hasValidAccessToken() {
-        long unixTime = System.currentTimeMillis() / 1000L;
+        long unixTime = System.currentTimeMillis() / 1000l;
         return unixTime < getExpiresIn() + getCreatedAt() && getAccessToken() != null;
     }
 
     public void clearOAuthCredentials() {
-        try {
-            prefs.clear();
-        } catch (BackingStoreException e) {
-            e.printStackTrace();
-        }
+        prefs.clear();
     }
 
     public String getRefreshToken() {

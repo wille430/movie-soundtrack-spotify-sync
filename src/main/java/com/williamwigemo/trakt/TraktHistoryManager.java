@@ -2,14 +2,15 @@ package com.williamwigemo.trakt;
 
 import java.text.ParseException;
 import java.util.Date;
-import java.util.prefs.Preferences;
 
+import com.williamwigemo.AppPreferences;
+import com.williamwigemo.AppProperties;
 import com.williamwigemo.UrlUtils;
 
 public class TraktHistoryManager {
     private static final String LAST_MOVIE_SYNC_KEY = "last_movie_sync";
     private static final TraktHistoryManager TraktHistoryManager = new TraktHistoryManager();
-    private static final Preferences Prefs = Preferences.userNodeForPackage(TraktHistoryManager.class);
+    private static final AppProperties Prefs = AppPreferences.getProperties(TraktHistoryManager.class);
 
     private TraktHistoryManager() {
 
@@ -42,7 +43,7 @@ public class TraktHistoryManager {
         setLastMovieSync(UrlUtils.getISO8601Date(date));
     }
 
-    public Preferences getPreferences() {
+    public AppProperties getPreferences() {
         return Prefs;
     }
 }

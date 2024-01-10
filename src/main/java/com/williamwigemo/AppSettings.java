@@ -14,6 +14,7 @@ public class AppSettings {
     private static final String SPOTIFY_CLIENT_SECRET = "SPOTIFY_CLIENT_SECRET";
     private static final String PORT = "PORT";
     private static final String APP_URL = "APP_URL";
+    private static final String DATA_DIRECTORY = "DATA_DIRECTORY";
 
     private static final int DefaultPort = 3000;
     private static final String DefaultHostname = "localhost";
@@ -26,6 +27,7 @@ public class AppSettings {
     public String spotifyClientSecret;
     private Integer port;
     private String appUrl;
+    private String dataDir;
 
     private static final Logger logger = AppLogging.buildLogger(AppSettings.class);
 
@@ -70,6 +72,12 @@ public class AppSettings {
 
         if (System.getenv(APP_URL) != null)
             this.setAppUrl(System.getenv(APP_URL));
+
+        if (System.getenv(DATA_DIRECTORY) != null) {
+            String dir = System.getenv(DATA_DIRECTORY);
+            logger.info(String.format("Storing application data in directory %s", dir));
+            this.dataDir = dir;
+        }
     }
 
     private void throwMissingProperty(String property) {
@@ -106,9 +114,10 @@ public class AppSettings {
         try {
             loadProperties(filePath);
         } catch (IOException e) {
-            logger.info(String.format("%s does not exist. Resolving credentials from environment.", filePath));
-            loadPropertiesFromEnv();
+            // do nothing
         }
+
+        loadPropertiesFromEnv();
 
         assignDefaults();
 
@@ -158,5 +167,9 @@ public class AppSettings {
 
     public String getSpotifyClientSecret() {
         return spotifyClientSecret;
+    }
+
+    public String getDataDir() {
+        return this.dataDir;
     }
 }

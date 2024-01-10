@@ -1,5 +1,7 @@
 FROM eclipse-temurin:17.0.9_9-jdk-jammy
 
+ENV DATA_DIRECTORY="/etc/msss"
+
 WORKDIR /app
 
 COPY .mvn/ .mvn

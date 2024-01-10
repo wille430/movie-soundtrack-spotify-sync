@@ -8,7 +8,7 @@ public class SpotifyOAuthTokenResponse implements OAuthCredentialsResponse {
     private String accessToken;
 
     @JsonProperty("token_type")
-    private String token_type;
+    private String tokenType;
 
     @JsonProperty("scope")
     private String scope;
@@ -23,8 +23,8 @@ public class SpotifyOAuthTokenResponse implements OAuthCredentialsResponse {
         return accessToken;
     }
 
-    public String getToken_type() {
-        return token_type;
+    public String getTokenType() {
+        return tokenType;
     }
 
     public String getScope() {

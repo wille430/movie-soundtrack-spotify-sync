@@ -11,13 +11,15 @@ public class App {
     private static final Logger logger = AppLogging.buildLogger(App.class);
 
     public static void main(String[] args) throws IOException {
+        DatabaseConfiguration.configureDatabase();
+
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
         SoundtrackSync soundtrackSync = new SoundtrackSync();
 
         scheduler.scheduleAtFixedRate(() -> {
-            logger.info("Starting syncAll job...");
+            logger.info("Syncing newly watched movies and shows...");
             soundtrackSync.syncNew();
-            logger.info("syncAll finished");
+            logger.info("Sync finished");
         }, 0, 5, TimeUnit.MINUTES);
     }
 }
