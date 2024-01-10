@@ -37,6 +37,7 @@ public class TraktHistoryManager {
 
     public void setLastMovieSync(String dateStr) {
         Prefs.put(LAST_MOVIE_SYNC_KEY, dateStr);
+        Prefs.store();
     }
 
     public void setLastMovieSync(Date date) {
